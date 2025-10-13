@@ -1,33 +1,33 @@
 package modules
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 )
 
-func commandSwitcher(player string, nickName string, command string) string {
-	fmt.Printf("[玩家命令] 玩家：%s | 命令：%s\n", player, command)
-	switch command {
-	case "@滴滴车":
-		fmt.Println("")
-	case "@新手礼包":
-		fmt.Println("")
-	default:
-		fmt.Println("[玩家命令] 未知命令:", command)
-	}
-	return ``
+// sequenceJson sequence dict to Json
+func sequenceJson(execData *map[string]string) []byte {
+	jsonByte, _ := json.Marshal(execData)
+	return jsonByte
 }
 
 func CommandHandler(regstring string, commch <-chan string, execch chan string) {
 	re := regexp.MustCompile(regstring)
+	var jsonByte []byte
+	execData := map[string]string{
+		"steamID":  "0",
+		"nickName": "0",
+		"command":  "0",
+	}
 	for line := range commch {
 		matches := re.FindStringSubmatch(line)
 		if len(matches) > 2 {
-			steamID := matches[1]
-			nickName := matches[2]
-			command := matches[3]
-			ExecutableCommand := commandSwitcher(steamID, nickName, command)
-			execch <- ExecutableCommand
+			execData["steamID"] = matches[1]
+			execData["nickName"] = matches[2]
+			execData["command"] = matches[3]
+			jsonByte = sequenceJson(&execData)
+			execch <- string(jsonByte)
 		} else {
 			fmt.Printf("[玩家聊天]%s\n", line)
 		}

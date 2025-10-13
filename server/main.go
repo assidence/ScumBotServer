@@ -17,7 +17,7 @@ func main() {
 	fmt.Printf("[Success]Chat log founded!%s(%s)\n", filePath, newsetTime)
 	var PlayerCommand = modules.ReadCommand(filePath)
 	fmt.Printf("[Success]Chat log Loaded!\n")
-	addr := "127.0.0.1:20500"
+	addr := "0.0.0.0:20500"
 	online := make(chan struct{})
 	execch := make(chan string)
 	go IMServer.StartHttpServer(addr, online)
