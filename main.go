@@ -19,7 +19,7 @@ func main() {
 	fmt.Printf("[Success]Chat log Loaded!\n")
 	addr := "127.0.0.1:20500"
 	online := make(chan struct{})
-	ch := make(chan string)
+	execch := make(chan string)
 	go IMServer.StartHttpServer(addr, online)
 	for {
 		select {
@@ -30,10 +30,13 @@ func main() {
 		}
 		break
 	}
-	go IMServer.HttpClient(addr, ch)
+	go IMServer.HttpClient(addr, execch)
+
+	commch := make(chan string)
+	reg := `'(\d+):([^']+)'\s+'.*?:\s*(@[^']+)'`
+	go modules.CommandHandler(reg, commch, execch)
 	for line := range *PlayerCommand {
-		fmt.Println("[聊天]", line.Text)
-		ch <- line.Text
+		commch <- line.Text
 		//fmt.Printf("[Network] Broadcast:\n", line.Text)
 	}
 }
