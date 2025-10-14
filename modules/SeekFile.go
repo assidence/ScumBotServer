@@ -9,7 +9,7 @@ import (
 )
 
 func FindNewestChatLog(dirPath string) (string, time.Time, error) {
-	pattern := `^chat_\d{14}\.log$`
+	pattern := regexp.MustCompile(`^chat_\d{14}\.log$`)
 	var newestFile string
 	var newestTime time.Time
 
@@ -22,11 +22,9 @@ func FindNewestChatLog(dirPath string) (string, time.Time, error) {
 			continue //skip substance folder
 		}
 
-		//get files info
-		modtime := entry.ModTime()
-		if modtime.After(newestTime) {
-			newestTime = modtime
-			if success, _ := regexp.MatchString(pattern, entry.Name()); success {
+		if pattern.MatchString(entry.Name()) {
+			if entry.ModTime().After(newestTime) {
+				newestTime = entry.ModTime()
 				newestFile = filepath.Join(dirPath, entry.Name())
 			}
 		}

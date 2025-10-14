@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ScumBotServer/client/execModules"
 	"bufio"
 	"encoding/json"
 	"fmt"
@@ -25,13 +26,14 @@ func HttpClient(address string) net.Conn {
 }
 
 // commandReader unmarshal JSON to key:value map
-func commandReader(re *regexp.Regexp, conn net.Conn, execCommand chan map[string]interface{}) {
+func commandReader(re *regexp.Regexp, conn net.Conn, execCommand chan map[string]interface{}, networkSignal chan struct{}) {
 	reader := bufio.NewReader(conn)
 	for {
 		line, err := reader.ReadString('\n') //each JSON end with \n
 		if err != nil {
 			fmt.Println("Disconnect from server:" + err.Error())
-			close(execCommand)
+			//close(execCommand)
+			close(networkSignal)
 			return
 		}
 		match := re.FindString(line)
@@ -65,18 +67,20 @@ func commandExecuter(execCommand chan map[string]interface{}) {
 
 func main() {
 	address := "0.0.0.0:20500"
-	conn := HttpClient(address)
-	defer func(conn net.Conn) {
-		err := conn.Close()
-		if err != nil {
-			panic(err)
-		}
-	}(conn)
 	var execCommand = make(chan map[string]interface{})
 	re := regexp.MustCompile(`\{[^}]*\}`)
-	go commandReader(re, conn, execCommand)
 	go commandExecuter(execCommand)
+	go execModules.FocusWindows("SCUM")
 	for {
-		continue
+		NetworkSignal := make(chan struct{})
+		conn := HttpClient(address)
+		defer func(conn net.Conn) {
+			err := conn.Close()
+			if err != nil {
+				panic(err)
+			}
+		}(conn)
+		go commandReader(re, conn, execCommand, NetworkSignal)
+		<-NetworkSignal
 	}
 }
