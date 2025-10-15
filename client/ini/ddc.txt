@@ -1,0 +1,3 @@
+SpawnVehicle BP_Dirtbike_E 4 Location %s Modifier MinimalFunctional
+SpawnVehicle BP_Dirtbike_E 5 Location %s Modifier MinimalFunctional
+SpawnVehicle BP_Dirtbike_E 6 Location %s Modifier MinimalFunctional

@@ -11,16 +11,20 @@ func iniLoader() *execModules.Config {
 		fmt.Println("[ERROR-KIT]->Error:", err)
 		return &execModules.Config{}
 	}
-	/*
-		for section, secMap := range cfg.Data {
-			fmt.Println("section:", section)
-			for key, value := range secMap {
-				fmt.Println("key:", key, "value:", value)
-			}
+	var commandList []string
+	//fmt.Println(cfg.Data)
+	for section, secMap := range cfg.Data {
+		//fmt.Println(secMap)
+		if section == "DEFAULT" {
+			continue
 		}
-
-	*/
-
+		commandFilePart := secMap["Command"].(string)
+		commandList, err = execModules.CommandFileReadLines(commandFilePart)
+		if err != nil {
+			fmt.Println("[ERROR-KIT]->Error:", err)
+		}
+		cfg.Data[section]["Command"] = commandList
+	}
 	return cfg
 }
 
@@ -35,13 +39,17 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 
 func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Config) {
 	commandPrefix := "#"
+	var commandLines []string
 	for command := range KitsChan {
 		//fmt.Println(command["command"].(string))
 		//fmt.Println(cfg.Data)
-		//fmt.Println(cfg.Data[command["command"].(string)])
-		cfgCommand := cfg.Data[command["command"].(string)]["Command"].(string)
-		cfgChat := fmt.Sprintf(cfgCommand, command["steamID"].(string))
-		execModules.SendChatMessage(commandPrefix + cfgChat)
+		//fmt.Println(cfg.Data[command["command"].(string)]["Command"])
+		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
+		for _, cfgCommand := range commandLines {
+			cfgChat := fmt.Sprintf(cfgCommand, command["steamID"].(string))
+			fmt.Println("[Kits-Module]:" + cfgChat)
+			execModules.SendChatMessage(commandPrefix + cfgChat)
+		}
 	}
 }
 
