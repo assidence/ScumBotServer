@@ -157,17 +157,14 @@ func SendChatMessage(message string) error {
 
 	// Step 2: Ctrl + A (select all)
 	// VK_CONTROL = 0x11, 'A' = 0x41
-	fmt.Println("1")
 	if err := keyDownVk(0x11); err != nil {
 		return err
 	}
-	fmt.Println("2")
 	// press 'A' down/up
 	if err := pressKeyVk(0x41, 30*time.Millisecond); err != nil {
 		_ = keyUpVk(0x11)
 		return err
 	}
-	fmt.Println("3")
 	// release Ctrl
 	if err := keyUpVk(0x11); err != nil {
 		return err

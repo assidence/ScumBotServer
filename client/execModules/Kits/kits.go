@@ -33,15 +33,21 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	(*regCommand)["Kits"] = commandList
 }
 
-func CommandHandler(KitsChan chan map[string]interface{}) {
+func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Config) {
+	commandPrefix := "#"
 	for command := range KitsChan {
-		fmt.Println("[INFO-Kits]->", command)
+		//fmt.Println(command["command"].(string))
+		//fmt.Println(cfg.Data)
+		//fmt.Println(cfg.Data[command["command"].(string)])
+		cfgCommand := cfg.Data[command["command"].(string)]["Command"].(string)
+		cfgChat := fmt.Sprintf(cfgCommand, command["steamID"].(string))
+		execModules.SendChatMessage(commandPrefix + cfgChat)
 	}
 }
 
 func Kits(regCommand *map[string][]string, KitsChan chan map[string]interface{}, initChan chan struct{}) {
 	cfg := iniLoader()
 	CommandRegister(cfg, regCommand)
-	go CommandHandler(KitsChan)
+	go CommandHandler(KitsChan, cfg)
 	close(initChan)
 }
