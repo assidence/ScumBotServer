@@ -49,7 +49,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 }
 
 func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager) {
-	//commandPrefix := "#"
+	commandPrefix := "#"
 	var commandLines []string
 	for command := range KitsChan {
 		//fmt.Println(command["command"].(string))
@@ -65,7 +65,10 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 		for _, cfgCommand := range commandLines {
 			cfgChat := fmt.Sprintf(cfgCommand, command["steamID"].(string))
 			fmt.Println("[Kits-Module]:" + cfgChat)
-			//execModules.SendChatMessage(commandPrefix + cfgChat)
+			err := execModules.SendChatMessage(commandPrefix + cfgChat)
+			if err != nil {
+				fmt.Println("[ERROR-Kit]->Error:", err)
+			}
 		}
 		PMbucket.Consume(command["steamID"].(string), command["command"].(string))
 	}

@@ -1,0 +1,16 @@
+SpawnItem Weapon_AK47 1
+SpawnItem Magazine_AK47 3 AmmoCount 30
+SpawnItem Cal_7_62x39mm_Ammobox 3
+SpawnItem ScopeRail_AK47 1
+SpawnItem WeaponSights_RedDot_CA401B 1
+SpawnItem Military_Backpack_02_02 1
+SpawnItem MRE_Stew 3
+SpawnItem Milk 2
+SpawnItem Emergency_Bandage_Big 1
+SpawnItem Camouflage_Jacket_01 1
+SpawnItem CombatBoots 1
+SpawnItem Military_Quiver_02 1
+SpawnItem MilitaryPants_03 1
+SpawnItem Bulletproof_Vest_01_05 1
+SpawnItem Combat_Helmet_01 1
+SpawnItem 2H_Tang_Dao 1
