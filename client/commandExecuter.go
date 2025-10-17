@@ -2,14 +2,17 @@ package main
 
 import (
 	"ScumBotServer/client/execModules"
+	"ScumBotServer/client/execModules/DidiCar"
 	"ScumBotServer/client/execModules/Kits"
 	"ScumBotServer/client/execModules/LogWacher"
 	"fmt"
 )
 
-var KitsChan = make(chan map[string]interface{})
+var KitsChan = make(chan map[string]interface{}, 100)
 
-var chatChan = make(chan string)
+var didiCarChan = make(chan map[string]interface{}, 100)
+
+var chatChan = make(chan string, 100)
 
 var lw = &LogWacher.LogWatcher{
 	FilePath: "",
@@ -25,14 +28,22 @@ func moduleInit(regCommand *map[string][]string) {
 	fmt.Println("[Module] 命令执行器已加载")
 
 	initChan = make(chan struct{})
+	var LWChan = make(chan *LogWacher.LogWatcher)
+	go LogWacher.RunLogWatcher(lw, LWChan, initChan)
+	lw = <-LWChan
+	<-initChan
+	fmt.Println("[Module] 客户端日志监控模组已加载")
+
+	initChan = make(chan struct{})
 	go Kits.Kits(regCommand, KitsChan, chatChan, initChan)
 	<-initChan
 	fmt.Println("[Module] 新手礼包模组已加载")
 
 	initChan = make(chan struct{})
-	go LogWacher.RunLogWatcher(lw, initChan)
+	go DidiCar.DidiCar(regCommand, didiCarChan, chatChan, lw, initChan)
 	<-initChan
-	fmt.Println("[Module] 客户端日志监控模组已加载")
+	fmt.Println("[Module] 滴滴车模组已加载")
+
 }
 
 func listToMap(list []string) map[string]struct{} {
@@ -46,19 +57,21 @@ func listToMap(list []string) map[string]struct{} {
 // commandSelecter detect which module match the command
 func commandSelecter(command map[string]interface{}, regCommand *map[string][]string) {
 	for moduleName, moduleCommands := range *regCommand {
-		moduleName = moduleName
+		//moduleName = moduleName
+		//fmt.Printf("%s::%s\n", moduleName, moduleCommands)
 		commandMap := listToMap(moduleCommands)
 		if _, ok := commandMap[command["command"].(string)]; ok {
 			switch moduleName {
 			case "Kits":
 				KitsChan <- command
-			default:
-				continue
+				return
+			case "DidiCar":
+				didiCarChan <- command
+				return
 			}
-		} else {
-			fmt.Printf("[Module] Command not Found!:%s\n", command["command"].(string))
 		}
 	}
+	fmt.Printf("[Module] Command not Found!:%s\n", command["command"].(string))
 }
 
 // commandSendToChat send and execute command to chat
@@ -79,6 +92,7 @@ func commandExecuter(execCommand chan map[string]interface{}) {
 
 	moduleInit(&regCommand)
 	for command := range execCommand {
+		//fmt.Println("[CommandExecuter]->Command:", command)
 		commandSelecter(command, &regCommand)
 	}
 }

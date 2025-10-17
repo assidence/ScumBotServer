@@ -67,6 +67,13 @@ func (lw *LogWatcher) Start() {
 				time.Sleep(lw.Interval)
 				continue
 			}
+			// 如果第一次启动，直接跳到文件末尾
+			if lw.lastOffset == 0 {
+				if stat, err := file.Stat(); err == nil {
+					lw.lastOffset = stat.Size()
+					fmt.Printf("[LogWatcher] 启动时跳过历史日志，当前位置: %d 字节\n", lw.lastOffset)
+				}
+			}
 
 			stat, _ := file.Stat()
 			// 文件被清空或轮转
@@ -94,7 +101,6 @@ func (lw *LogWatcher) Start() {
 	}()
 }
 
-// parseBlock 解析玩家信息块
 // parseBlock 解析玩家信息块
 func (lw *LogWatcher) parseBlock(block []string) {
 	text := strings.Join(block, "\n") // 保留换行
@@ -137,7 +143,7 @@ func (lw *LogWatcher) GetPlayers() map[string]Player {
 	return copy
 }
 
-func RunLogWatcher(lw *LogWatcher, initChan chan struct{}) {
+func RunLogWatcher(lw *LogWatcher, LWChan chan *LogWatcher, initChan chan struct{}) {
 	// 日志文件路径
 	roamingPath := os.Getenv("AppData")
 	logFile := strings.Replace(roamingPath, `AppData\Roaming`, `AppData\Local\SCUM\Saved\Logs\SCUM.log`, 1)
@@ -150,7 +156,13 @@ func RunLogWatcher(lw *LogWatcher, initChan chan struct{}) {
 
 	// 开始监控日志
 	lw.Start()
+
+	LWChan <- lw
+
 	close(initChan)
+	close(LWChan)
+	//select {}
+	//close(initChan)
 	// 定时打印玩家列表
 	/*
 		ticker := time.NewTicker(5 * time.Second)

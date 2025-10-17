@@ -1,16 +1,16 @@
-package Kits
+package DidiCar
 
 import (
 	"ScumBotServer/client/execModules"
+	"ScumBotServer/client/execModules/LogWacher"
 	"ScumBotServer/client/execModules/permissionBucket"
 	"fmt"
 )
 
 func iniLoader() *execModules.Config {
-	cfg, err := execModules.NewConfig("./ini/Kits.ini")
-	fmt.Println(cfg)
+	cfg, err := execModules.NewConfig("./ini/DidiCar.ini")
 	if err != nil {
-		fmt.Println("[ERROR-KIT]->Error:", err)
+		fmt.Println("[ERROR-DiDiCar]->Error:", err)
 		return &execModules.Config{}
 	}
 	var commandList []string
@@ -23,7 +23,7 @@ func iniLoader() *execModules.Config {
 		commandFilePart := secMap["Command"].(string)
 		commandList, err = execModules.CommandFileReadLines(commandFilePart)
 		if err != nil {
-			fmt.Println("[ERROR-KIT]->Error:", err)
+			fmt.Println("[ERROR-DiDiCar]->Error:", err)
 		}
 		cfg.Data[section]["Command"] = commandList
 	}
@@ -31,7 +31,7 @@ func iniLoader() *execModules.Config {
 }
 
 func createPermissionBucket() *permissionBucket.Manager {
-	PmBucket, err := permissionBucket.NewManager("./db/Kits.db")
+	PmBucket, err := permissionBucket.NewManager("./db/didiCar.db")
 	if err != nil {
 		panic(err)
 	}
@@ -46,27 +46,29 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	for section, _ := range cfg.Data {
 		commandList = append(commandList, section)
 	}
-	(*regCommand)["Kits"] = commandList
+	(*regCommand)["DidiCar"] = commandList
 }
 
-func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string) {
+func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, lw *LogWacher.LogWatcher) {
+	//fmt.Println("im here")
 	commandPrefix := "#"
 	var commandLines []string
-	for command := range KitsChan {
+	for command := range didiCarChan {
+		//fmt.Println("DidiCar Handler is Up and Running")
 		//fmt.Println(command["command"].(string))
 		//fmt.Println(cfg.Data)
 		//fmt.Println(cfg.Data[command["command"].(string)]["Command"])
 		ok, msg := PMbucket.CanExecute(command["steamID"].(string), command["command"].(string))
 		//fmt.Println(command["steamID"].(string) + command["command"].(string))
 		if !ok {
-			fmt.Println("[ERROR-KIT]->Error:", msg)
+			fmt.Println("[ERROR-DidiCar]->Error:", msg)
 			continue
 		}
 
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
 			cfgChat := fmt.Sprintf(cfgCommand, command["steamID"].(string))
-			fmt.Println("[Kits-Module]:" + cfgChat)
+			fmt.Println("[DidiCar-Module]:" + cfgChat)
 			/*
 				err := execModules.SendChatMessage(commandPrefix + cfgChat)
 				if err != nil {
@@ -74,7 +76,10 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 				}
 
 			*/
-			chatChan <- commandPrefix + cfgChat
+			PLocationX := lw.Players[command["steamID"].(string)].LocationX
+			PLocationY := lw.Players[command["steamID"].(string)].LocationY
+			PLocationZ := lw.Players[command["steamID"].(string)].LocationZ
+			chatChan <- commandPrefix + fmt.Sprintf(cfgChat, PLocationX, PLocationY, PLocationZ)
 		}
 		chatChan <- fmt.Sprintf("%s 物品发放中 请耐心等待", command["nickName"].(string))
 		PMbucket.Consume(command["steamID"].(string), command["command"].(string))
@@ -82,12 +87,12 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 	defer PMbucket.Close()
 }
 
-func Kits(regCommand *map[string][]string, KitsChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
+func DidiCar(regCommand *map[string][]string, didiCarChan chan map[string]interface{}, chatChan chan string, lw *LogWacher.LogWatcher, initChan chan struct{}) {
 	cfg := iniLoader()
 	PmBucket := createPermissionBucket()
 	permissionBucket.CommandConfigChan <- cfg.Data
 	CommandRegister(cfg, regCommand)
-	go CommandHandler(KitsChan, cfg, PmBucket, chatChan)
+	go CommandHandler(didiCarChan, cfg, PmBucket, chatChan, lw)
 	close(initChan)
 	//select {}
 }

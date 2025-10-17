@@ -267,6 +267,8 @@ func (m *Manager) loadAllBucketsFromDB() error {
 // CanExecute 检查玩家是否可执行某命令（基于 CoolDown / DailyLimit / TotalLimit）
 func (m *Manager) CanExecute(playerID, command string) (bool, string) {
 	m.mu.RLock()
+	fmt.Println("PermissionConfigs:")
+	fmt.Println(m.configs[command])
 	cfg, exists := m.configs[command]
 	m.mu.RUnlock()
 	if !exists {
