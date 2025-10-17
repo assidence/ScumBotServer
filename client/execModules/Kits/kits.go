@@ -48,7 +48,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	(*regCommand)["Kits"] = commandList
 }
 
-func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager) {
+func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string) {
 	commandPrefix := "#"
 	var commandLines []string
 	for command := range KitsChan {
@@ -65,21 +65,26 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 		for _, cfgCommand := range commandLines {
 			cfgChat := fmt.Sprintf(cfgCommand, command["steamID"].(string))
 			fmt.Println("[Kits-Module]:" + cfgChat)
-			err := execModules.SendChatMessage(commandPrefix + cfgChat)
-			if err != nil {
-				fmt.Println("[ERROR-Kit]->Error:", err)
-			}
+			/*
+				err := execModules.SendChatMessage(commandPrefix + cfgChat)
+				if err != nil {
+					fmt.Println("[ERROR-Kit]->Error:", err)
+				}
+
+			*/
+			chatChan <- commandPrefix + cfgChat
 		}
+		chatChan <- fmt.Sprintf("%s 物品发放中 请耐心等待", command["nickName"].(string))
 		PMbucket.Consume(command["steamID"].(string), command["command"].(string))
 	}
 	defer PMbucket.Close()
 }
 
-func Kits(regCommand *map[string][]string, KitsChan chan map[string]interface{}, initChan chan struct{}) {
+func Kits(regCommand *map[string][]string, KitsChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
 	cfg := iniLoader()
 	PmBucket := createPermissionBucket()
 	permissionBucket.CommandConfigChan <- cfg.Data
 	CommandRegister(cfg, regCommand)
-	go CommandHandler(KitsChan, cfg, PmBucket)
+	go CommandHandler(KitsChan, cfg, PmBucket, chatChan)
 	close(initChan)
 }

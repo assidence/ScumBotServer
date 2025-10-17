@@ -1,0 +1,168 @@
+package LogWacher
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+)
+
+// Player 玩家信息
+type Player struct {
+	SteamID        string
+	Name           string
+	Fame           string
+	AccountBalance string
+	GoldBalance    string
+	LocationX      string
+	LocationY      string
+	LocationZ      string
+}
+
+// Rule 单条匹配规则
+type Rule struct {
+	Name       string
+	BlockStart *regexp.Regexp
+	Pattern    *regexp.Regexp
+}
+
+// LogWatcher 日志监控模块
+type LogWatcher struct {
+	FilePath string
+	Interval time.Duration
+
+	rulesDir string
+	rules    []Rule
+	lastMod  time.Time
+
+	lastOffset int64
+	mu         sync.Mutex
+	Players    map[string]Player
+}
+
+// NewLogWatcher 创建实例
+func NewLogWatcher(filePath string, interval time.Duration, rulesDir string) *LogWatcher {
+	lw := &LogWatcher{
+		FilePath:   filePath,
+		Interval:   interval,
+		rulesDir:   rulesDir,
+		Players:    make(map[string]Player),
+		lastOffset: 0,
+	}
+	lw.loadRules()
+	//go lw.autoReloadRules()
+	return lw
+}
+
+// Start 开始监控日志
+func (lw *LogWatcher) Start() {
+	go func() {
+		for {
+			file, err := os.Open(lw.FilePath)
+			if err != nil {
+				fmt.Println("[LogWatcher] 无法打开日志:", err)
+				time.Sleep(lw.Interval)
+				continue
+			}
+
+			stat, _ := file.Stat()
+			// 文件被清空或轮转
+			if stat.Size() < lw.lastOffset {
+				lw.lastOffset = 0
+			}
+
+			file.Seek(lw.lastOffset, 0)
+			scanner := bufio.NewScanner(file)
+			var buffer []string
+
+			for scanner.Scan() {
+				line := strings.TrimSpace(scanner.Text())
+				buffer = append(buffer, line)
+				if strings.HasSuffix(line, "!") {
+					lw.parseBlock(buffer)
+					buffer = nil
+				}
+			}
+
+			lw.lastOffset, _ = file.Seek(0, 1)
+			file.Close()
+			time.Sleep(lw.Interval)
+		}
+	}()
+}
+
+// parseBlock 解析玩家信息块
+// parseBlock 解析玩家信息块
+func (lw *LogWatcher) parseBlock(block []string) {
+	text := strings.Join(block, "\n") // 保留换行
+	for _, r := range lw.rules {
+		if r.BlockStart.MatchString(text) && r.Pattern.MatchString(text) {
+			// 找出文本里所有匹配的玩家
+			matches := r.Pattern.FindAllStringSubmatch(text, -1)
+			for _, match := range matches {
+				if len(match) >= 8 { // 第0项是完整匹配，后面是捕获组
+					player := Player{
+						Name:           match[1],
+						SteamID:        match[2],
+						Fame:           match[3],
+						AccountBalance: match[4],
+						GoldBalance:    match[5],
+						LocationX:      match[6],
+						LocationY:      match[7],
+						LocationZ:      match[8],
+					}
+					lw.mu.Lock()
+					lw.Players[player.SteamID] = player
+					lw.mu.Unlock()
+					fmt.Println("[LogWatcher] 捕获玩家信息:", player.Name, player.SteamID)
+					//fmt.Printf("%s:%s %s %s\n", player.Name, player.LocationX, player.LocationY, player.LocationZ)
+				}
+			}
+		}
+	}
+}
+
+// GetPlayers 获取当前玩家列表
+func (lw *LogWatcher) GetPlayers() map[string]Player {
+	lw.mu.Lock()
+	defer lw.mu.Unlock()
+
+	copy := make(map[string]Player, len(lw.Players))
+	for k, v := range lw.Players {
+		copy[k] = v
+	}
+	return copy
+}
+
+func RunLogWatcher(lw *LogWatcher, initChan chan struct{}) {
+	// 日志文件路径
+	roamingPath := os.Getenv("AppData")
+	logFile := strings.Replace(roamingPath, `AppData\Roaming`, `AppData\Local\SCUM\Saved\Logs\SCUM.log`, 1)
+
+	// 规则所在文件夹
+	rulesDir := "./ini/LogWatcher/"
+
+	// 创建 LogWatcher
+	lw = NewLogWatcher(logFile, 2*time.Second, rulesDir)
+
+	// 开始监控日志
+	lw.Start()
+	close(initChan)
+	// 定时打印玩家列表
+	/*
+		ticker := time.NewTicker(5 * time.Second)
+		for range ticker.C {
+			players := lw.GetPlayers()
+			fmt.Println("=== 当前玩家列表 ===")
+			for _, p := range players {
+				fmt.Printf("Name: %s, SteamID: %s, Fame: %s, Account: %s, Gold: %s, Location: %s\n",
+					p.Name, p.SteamID, p.Fame, p.AccountBalance, p.GoldBalance, p.Location)
+			}
+			fmt.Println("===================")
+		}
+
+	*/
+}

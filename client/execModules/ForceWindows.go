@@ -40,12 +40,12 @@ func FocusWindows(gameTitle string) {
 			case 1:
 				fmt.Printf("[Focus-WatchDog] DLL 结果: 找到可见但未成为前台 (1) => '%s'\n", gameTitle)
 			case 2:
-				fmt.Printf("[Focus-WatchDog] DLL 结果: 已成功切换为前台 (2) => '%s'\n", gameTitle)
+				//fmt.Printf("[Focus-WatchDog] DLL 结果: 已成功切换为前台 (2) => '%s'\n", gameTitle)
 			default:
 				fmt.Printf("[Focus-WatchDog] DLL 返回未知状态: %d => '%s'\n", status, gameTitle)
 			}
 		}
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 }

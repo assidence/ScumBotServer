@@ -6,6 +6,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.32
 	golang.org/x/text v0.30.0
 	gopkg.in/ini.v1 v1.67.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require github.com/stretchr/testify v1.11.1 // indirect
