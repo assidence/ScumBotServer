@@ -53,18 +53,26 @@ func (c *Config) Load() error {
 // parseValue 自动识别 int / float / bool / string
 func parseValue(val string) interface{} {
 	val = strings.TrimSpace(val)
-	// 尝试 bool
-	if b, err := strconv.ParseBool(val); err == nil {
-		return b
-	}
-	// 尝试 int
+
+	// 先尝试 int
 	if i, err := strconv.ParseInt(val, 10, 64); err == nil {
 		return i
 	}
-	// 尝试 float
+
+	// 再尝试 float
 	if f, err := strconv.ParseFloat(val, 64); err == nil {
 		return f
 	}
+
+	// 最后尝试 bool（仅解析 true/false，不解析 1/0）
+	lowerVal := strings.ToLower(val)
+	if lowerVal == "true" {
+		return true
+	}
+	if lowerVal == "false" {
+		return false
+	}
+
 	// 默认 string
 	return val
 }
