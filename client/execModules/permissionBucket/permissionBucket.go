@@ -11,7 +11,7 @@ import (
 )
 
 // 全局信道：外部命令模块把 map[string]map[string]interface{} 发到这里
-var CommandConfigChan = make(chan map[string]map[string]interface{})
+//var CommandConfigChan = make(chan map[string]map[string]interface{})
 
 // CommandConfig 强类型表示单条命令配置（从 interface{} map 转换而来）
 type CommandConfig struct {
@@ -36,12 +36,13 @@ type Bucket struct {
 
 // Manager 负责合并配置、维护 buckets，并持久化到 sqlite
 type Manager struct {
-	mu      sync.RWMutex
-	configs map[string]*CommandConfig     // commandName -> config
-	buckets map[string]map[string]*Bucket // playerID -> commandName -> Bucket
-	db      *sql.DB
-	quit    chan struct{}
-	wg      sync.WaitGroup
+	mu                sync.RWMutex
+	configs           map[string]*CommandConfig     // commandName -> config
+	buckets           map[string]map[string]*Bucket // playerID -> commandName -> Bucket
+	db                *sql.DB
+	quit              chan struct{}
+	wg                sync.WaitGroup
+	CommandConfigChan chan map[string]map[string]interface{}
 }
 
 // NewManager 创建并初始化 sqlite 表
@@ -65,10 +66,11 @@ func NewManager(sqlitePath string) (*Manager, error) {
 	}
 
 	m := &Manager{
-		configs: make(map[string]*CommandConfig),
-		buckets: make(map[string]map[string]*Bucket),
-		db:      db,
-		quit:    make(chan struct{}),
+		configs:           make(map[string]*CommandConfig),
+		buckets:           make(map[string]map[string]*Bucket),
+		db:                db,
+		quit:              make(chan struct{}),
+		CommandConfigChan: make(chan map[string]map[string]interface{}),
 	}
 	// 在创建时从 DB 载入现有 usage 到内存（可选）
 	if err := m.loadAllBucketsFromDB(); err != nil {
@@ -94,17 +96,17 @@ func (m *Manager) Close() error {
 func (m *Manager) signalListener() {
 	defer m.wg.Done()
 	for {
-		//fmt.Println("[PmBucket] signalListener Running")
+		fmt.Println("[PmBucket] signalListener Running")
 		select {
-		case newCfg, ok := <-CommandConfigChan:
-			//fmt.Println("CommandConfigChan Reviced Data!")
+		case newCfg, ok := <-m.CommandConfigChan:
+			fmt.Println("CommandConfigChan Reviced Data!")
 			if !ok {
 				return
 			}
 			// newCfg: map[commandName]map[string]interface{}
 			m.mergeConfig(newCfg)
 		case <-m.quit:
-			//fmt.Println("[PmBucket] signalListener Quit")
+			fmt.Println("[PmBucket] signalListener Quit")
 			return
 		}
 	}

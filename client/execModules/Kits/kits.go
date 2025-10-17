@@ -8,7 +8,7 @@ import (
 
 func iniLoader() *execModules.Config {
 	cfg, err := execModules.NewConfig("./ini/Kits.ini")
-	fmt.Println(cfg)
+	//fmt.Println(cfg)
 	if err != nil {
 		fmt.Println("[ERROR-KIT]->Error:", err)
 		return &execModules.Config{}
@@ -85,7 +85,7 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 func Kits(regCommand *map[string][]string, KitsChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
 	cfg := iniLoader()
 	PmBucket := createPermissionBucket()
-	permissionBucket.CommandConfigChan <- cfg.Data
+	PmBucket.CommandConfigChan <- cfg.Data
 	CommandRegister(cfg, regCommand)
 	go CommandHandler(KitsChan, cfg, PmBucket, chatChan)
 	close(initChan)

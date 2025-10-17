@@ -67,8 +67,6 @@ func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Co
 
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
-			cfgChat := fmt.Sprintf(cfgCommand, command["steamID"].(string))
-			fmt.Println("[DidiCar-Module]:" + cfgChat)
 			/*
 				err := execModules.SendChatMessage(commandPrefix + cfgChat)
 				if err != nil {
@@ -79,9 +77,11 @@ func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Co
 			PLocationX := lw.Players[command["steamID"].(string)].LocationX
 			PLocationY := lw.Players[command["steamID"].(string)].LocationY
 			PLocationZ := lw.Players[command["steamID"].(string)].LocationZ
-			chatChan <- commandPrefix + fmt.Sprintf(cfgChat, PLocationX, PLocationY, PLocationZ)
+			cfgChat := fmt.Sprintf(cfgCommand, PLocationX, PLocationY, PLocationZ)
+			fmt.Println("[DidiCar-Module]:" + cfgChat)
+			chatChan <- commandPrefix + cfgChat
 		}
-		chatChan <- fmt.Sprintf("%s 物品发放中 请耐心等待", command["nickName"].(string))
+		chatChan <- fmt.Sprintf("%s 滴滴车呼叫中 请耐心等待", command["nickName"].(string))
 		PMbucket.Consume(command["steamID"].(string), command["command"].(string))
 	}
 	defer PMbucket.Close()
@@ -90,7 +90,7 @@ func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Co
 func DidiCar(regCommand *map[string][]string, didiCarChan chan map[string]interface{}, chatChan chan string, lw *LogWacher.LogWatcher, initChan chan struct{}) {
 	cfg := iniLoader()
 	PmBucket := createPermissionBucket()
-	permissionBucket.CommandConfigChan <- cfg.Data
+	PmBucket.CommandConfigChan <- cfg.Data
 	CommandRegister(cfg, regCommand)
 	go CommandHandler(didiCarChan, cfg, PmBucket, chatChan, lw)
 	close(initChan)
