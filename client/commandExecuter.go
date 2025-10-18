@@ -38,7 +38,7 @@ func moduleInit(regCommand *map[string][]string) {
 	fmt.Println("[Module] 客户端日志监控模组已加载")
 
 	initChan = make(chan struct{})
-	go Kits.Kits(regCommand, KitsChan, chatChan, initChan)
+	go Kits.Kits(regCommand, KitsChan, chatChan, lw, initChan)
 	<-initChan
 	fmt.Println("[Module] 新手礼包模组已加载")
 

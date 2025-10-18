@@ -9,7 +9,7 @@ import (
 
 func main() {
 	//found newset ChatLog
-	filePath, newsetTime, err := modules.FindNewestChatLog(os.Args[1])
+	filePath, newsetTime, err := modules.FindNewestChatLog(os.Args[2])
 
 	if err != nil {
 		panic(err)
@@ -17,7 +17,7 @@ func main() {
 	fmt.Printf("[Success]Chat log founded!%s(%s)\n", filePath, newsetTime)
 	var PlayerCommand = modules.ReadCommand(filePath)
 	fmt.Printf("[Success]Chat log Loaded!\n")
-	addr := "0.0.0.0:20500"
+	addr := fmt.Sprintf("0.0.0.0:%s", os.Args[1])
 	online := make(chan struct{})
 	execch := make(chan string)
 	go IMServer.StartHttpServer(addr, online)

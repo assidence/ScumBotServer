@@ -2,8 +2,10 @@ package Kits
 
 import (
 	"ScumBotServer/client/execModules"
+	"ScumBotServer/client/execModules/LogWacher"
 	"ScumBotServer/client/execModules/permissionBucket"
 	"fmt"
+	"regexp"
 )
 
 func iniLoader() *execModules.Config {
@@ -49,7 +51,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	(*regCommand)["Kits"] = commandList
 }
 
-func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string) {
+func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, lw *LogWacher.LogWatcher) {
 	commandPrefix := "#"
 	var commandLines []string
 	for command := range KitsChan {
@@ -64,30 +66,55 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 		}
 
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
+		var cfgChat string
 		for _, cfgCommand := range commandLines {
-			cfgChat := fmt.Sprintf(cfgCommand, command["steamID"].(string))
-			fmt.Println("[Kits-Module]:" + cfgChat)
-			/*
-				err := execModules.SendChatMessage(commandPrefix + cfgChat)
-				if err != nil {
-					fmt.Println("[ERROR-Kit]->Error:", err)
+			re := regexp.MustCompile(`^\w+`)
+			cmd := re.FindString(cfgCommand)
+			switch cmd {
+			case "DestroyDiDi":
+				if lw.Vehicles["BPC_Dirtbike"] == nil {
+					chatChan <- fmt.Sprintf("找不到%s车辆类型的id列表", "BPC_Dirtbike")
+					continue
 				}
-
-			*/
-			chatChan <- commandPrefix + cfgChat
+				for _, vehicleID := range lw.Vehicles["BPC_Dirtbike"] {
+					cfgChat = fmt.Sprintf("DestroyVehicle %s", vehicleID)
+					chatChan <- commandPrefix + cfgChat
+					fmt.Println("[Kits-Module]:" + cfgChat)
+					PMbucket.Consume(command["steamID"].(string), command["command"].(string))
+				}
+			case "SpawnItem":
+				cfgChat = fmt.Sprintf(cfgCommand, command["steamID"].(string))
+				chatChan <- commandPrefix + cfgChat
+				fmt.Println("[Kits-Module]:" + cfgChat)
+				PMbucket.Consume(command["steamID"].(string), command["command"].(string))
+			case "ChangeCurrencyBalance":
+				cfgChat = fmt.Sprintf(cfgCommand, command["steamID"].(string))
+				chatChan <- commandPrefix + cfgChat
+				fmt.Println("[Kits-Module]:" + cfgChat)
+				PMbucket.Consume(command["steamID"].(string), command["command"].(string))
+			case "SpawnVehicle":
+				PLocationX := lw.Players[command["steamID"].(string)].LocationX
+				PLocationY := lw.Players[command["steamID"].(string)].LocationY
+				PLocationZ := lw.Players[command["steamID"].(string)].LocationZ
+				cfgChat = fmt.Sprintf(cfgCommand, PLocationX, PLocationY, PLocationZ)
+				chatChan <- commandPrefix + cfgChat
+				fmt.Println("[Kits-Module]:" + cfgChat)
+				PMbucket.Consume(command["steamID"].(string), command["command"].(string))
+			default:
+				fmt.Println("[ERROR-Kits]->Error:无法匹配命令 ", cmd)
+			}
 		}
-		chatChan <- fmt.Sprintf("%s 物品发放中 请耐心等待", command["nickName"].(string))
-		PMbucket.Consume(command["steamID"].(string), command["command"].(string))
+		chatChan <- fmt.Sprintf("%s 礼包发放中 请耐心等待", command["nickName"].(string))
 	}
 	defer PMbucket.Close()
 }
 
-func Kits(regCommand *map[string][]string, KitsChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
+func Kits(regCommand *map[string][]string, KitsChan chan map[string]interface{}, chatChan chan string, lw *LogWacher.LogWatcher, initChan chan struct{}) {
 	cfg := iniLoader()
 	PmBucket := createPermissionBucket()
 	PmBucket.CommandConfigChan <- cfg.Data
 	CommandRegister(cfg, regCommand)
-	go CommandHandler(KitsChan, cfg, PmBucket, chatChan)
+	go CommandHandler(KitsChan, cfg, PmBucket, chatChan, lw)
 	close(initChan)
 	//select {}
 }
