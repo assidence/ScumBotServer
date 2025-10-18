@@ -134,7 +134,7 @@ func (lw *LogWatcher) parseBlock(block []string) {
 					lw.mu.Lock()
 					lw.Players[player.SteamID] = player
 					lw.mu.Unlock()
-					fmt.Println("[LogWatcher] 捕获玩家信息:", player.Name, player.SteamID)
+					//fmt.Println("[LogWatcher] 捕获玩家信息:", player.Name, player.SteamID)
 					//fmt.Printf("%s:%s %s %s\n", player.Name, player.LocationX, player.LocationY, player.LocationZ)
 				}
 				if len(match) == 3 {

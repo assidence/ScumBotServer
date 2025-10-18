@@ -29,6 +29,8 @@ func Selecter(steamID string, cfgCommand string, lw *LogWacher.LogWatcher) []str
 		PLocationY := lw.Players[steamID].LocationY
 		PLocationZ := lw.Players[steamID].LocationZ
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, PLocationX, PLocationY, PLocationZ))
+	case "ListPlayers":
+		cfgChat = append(cfgChat, cfgCommand)
 	default:
 		fmt.Println("[ERROR-CommandSelecter]->Error:无法匹配命令 ", cmd)
 	}

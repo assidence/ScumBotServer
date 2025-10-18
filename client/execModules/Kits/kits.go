@@ -2,10 +2,10 @@ package Kits
 
 import (
 	"ScumBotServer/client/execModules"
+	"ScumBotServer/client/execModules/CommandSelecter"
 	"ScumBotServer/client/execModules/LogWacher"
 	"ScumBotServer/client/execModules/permissionBucket"
 	"fmt"
-	"regexp"
 )
 
 func iniLoader() *execModules.Config {
@@ -52,9 +52,9 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 }
 
 func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, lw *LogWacher.LogWatcher) {
-	commandPrefix := "#"
 	var commandLines []string
 	for command := range KitsChan {
+		chatChan <- fmt.Sprintf("%s 礼包发放中 请耐心等待", command["nickName"].(string))
 		//fmt.Println(command["command"].(string))
 		//fmt.Println(cfg.Data)
 		//fmt.Println(cfg.Data[command["command"].(string)]["Command"])
@@ -66,45 +66,13 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 		}
 
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
-		var cfgChat string
 		for _, cfgCommand := range commandLines {
-			re := regexp.MustCompile(`^\w+`)
-			cmd := re.FindString(cfgCommand)
-			switch cmd {
-			case "DestroyDiDi":
-				if lw.Vehicles["BPC_Dirtbike"] == nil {
-					chatChan <- fmt.Sprintf("找不到%s车辆类型的id列表", "BPC_Dirtbike")
-					continue
-				}
-				for _, vehicleID := range lw.Vehicles["BPC_Dirtbike"] {
-					cfgChat = fmt.Sprintf("DestroyVehicle %s", vehicleID)
-					chatChan <- commandPrefix + cfgChat
-					fmt.Println("[Kits-Module]:" + cfgChat)
-					PMbucket.Consume(command["steamID"].(string), command["command"].(string))
-				}
-			case "SpawnItem":
-				cfgChat = fmt.Sprintf(cfgCommand, command["steamID"].(string))
-				chatChan <- commandPrefix + cfgChat
-				fmt.Println("[Kits-Module]:" + cfgChat)
-				PMbucket.Consume(command["steamID"].(string), command["command"].(string))
-			case "ChangeCurrencyBalance":
-				cfgChat = fmt.Sprintf(cfgCommand, command["steamID"].(string))
-				chatChan <- commandPrefix + cfgChat
-				fmt.Println("[Kits-Module]:" + cfgChat)
-				PMbucket.Consume(command["steamID"].(string), command["command"].(string))
-			case "SpawnVehicle":
-				PLocationX := lw.Players[command["steamID"].(string)].LocationX
-				PLocationY := lw.Players[command["steamID"].(string)].LocationY
-				PLocationZ := lw.Players[command["steamID"].(string)].LocationZ
-				cfgChat = fmt.Sprintf(cfgCommand, PLocationX, PLocationY, PLocationZ)
-				chatChan <- commandPrefix + cfgChat
-				fmt.Println("[Kits-Module]:" + cfgChat)
-				PMbucket.Consume(command["steamID"].(string), command["command"].(string))
-			default:
-				fmt.Println("[ERROR-Kits]->Error:无法匹配命令 ", cmd)
+			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand, lw)
+			for _, lines := range cfglines {
+				chatChan <- lines
+				fmt.Println("[Kits-Module]:" + lines)
 			}
 		}
-		chatChan <- fmt.Sprintf("%s 礼包发放中 请耐心等待", command["nickName"].(string))
 	}
 	defer PMbucket.Close()
 }

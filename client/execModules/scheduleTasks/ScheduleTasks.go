@@ -2,10 +2,10 @@ package scheduleTasks
 
 import (
 	"ScumBotServer/client/execModules"
+	"ScumBotServer/client/execModules/CommandSelecter"
 	"ScumBotServer/client/execModules/LogWacher"
 	"ScumBotServer/client/execModules/permissionBucket"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -55,9 +55,9 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 }
 
 func CommandHandler(ScheduleTasksChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, lw *LogWacher.LogWatcher) {
-	commandPrefix := "#"
 	var commandLines []string
 	for command := range ScheduleTasksChan {
+		chatChan <- fmt.Sprintf("%s 任务执行中 请耐心等待", command["nickName"].(string))
 		//fmt.Println(command["command"].(string))
 		//fmt.Println(cfg.Data)
 		//fmt.Println(cfg.Data[command["command"].(string)]["Command"])
@@ -69,48 +69,13 @@ func CommandHandler(ScheduleTasksChan chan map[string]interface{}, cfg *execModu
 		}
 
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
-		var cfgChat string
 		for _, cfgCommand := range commandLines {
-			re := regexp.MustCompile(`^\w+`)
-			cmd := re.FindString(cfgCommand)
-			switch cmd {
-			case "DestroyDiDi":
-				if lw.Vehicles["BPC_Dirtbike"] == nil {
-					chatChan <- fmt.Sprintf("找不到%s车辆类型的id列表", "BPC_Dirtbike")
-					continue
-				}
-				for _, vehicleID := range lw.Vehicles["BPC_Dirtbike"] {
-					cfgChat = fmt.Sprintf("DestroyVehicle %s", vehicleID)
-					chatChan <- commandPrefix + cfgChat
-					fmt.Println("[ScheduleTasks-Module]:" + cfgChat)
-					PMbucket.Consume(command["steamID"].(string), command["command"].(string))
-				}
-			case "SpawnItem":
-				cfgChat = fmt.Sprintf(cfgCommand, command["steamID"].(string))
-				chatChan <- commandPrefix + cfgChat
-				fmt.Println("[ScheduleTasks-Module]:" + cfgChat)
-				PMbucket.Consume(command["steamID"].(string), command["command"].(string))
-			case "SpawnVehicle":
-				PLocationX := lw.Players[command["steamID"].(string)].LocationX
-				PLocationY := lw.Players[command["steamID"].(string)].LocationY
-				PLocationZ := lw.Players[command["steamID"].(string)].LocationZ
-				cfgChat = fmt.Sprintf(cfgCommand, PLocationX, PLocationY, PLocationZ)
-				chatChan <- commandPrefix + cfgChat
-				fmt.Println("[ScheduleTasks-Module]:" + cfgChat)
-				PMbucket.Consume(command["steamID"].(string), command["command"].(string))
-			default:
-				fmt.Println("[ERROR-ScheduleTasks]->Error:无法匹配命令 ", cmd)
+			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand, lw)
+			for _, lines := range cfglines {
+				chatChan <- lines
+				fmt.Println("[ScheduleTasks-Module]:" + lines)
 			}
-			/*
-				err := execModules.SendChatMessage(commandPrefix + cfgChat)
-				if err != nil {
-					fmt.Println("[ERROR-Kit]->Error:", err)
-				}
-
-			*/
-			//chatChan <- commandPrefix + cfgChat
 		}
-		chatChan <- fmt.Sprintf("%s 任务执行中 请耐心等待", command["nickName"].(string))
 	}
 	defer PMbucket.Close()
 }
@@ -133,7 +98,7 @@ func DailyTask(schedule string, com string, ScheduleTasksChan chan map[string]in
 			select {
 			case <-time.After(time.Until(next)):
 				fmt.Printf("[ScheduleTasks-Module] %s:定期任务已执行\n", com)
-				dailyTaskFunction(com, ScheduleTasksChan)
+				TaskFunction(com, ScheduleTasksChan)
 			case <-quit:
 				fmt.Printf("[ScheduleTasks-Module] %s:定期任务已停止\n", com)
 				return
@@ -142,7 +107,24 @@ func DailyTask(schedule string, com string, ScheduleTasksChan chan map[string]in
 	}()
 }
 
-func dailyTaskFunction(com string, ScheduleTasksChan chan map[string]interface{}) {
+// IntervalTask 每隔指定的时间间隔执行 task，直到 quit 通道关闭
+func BuildInPlayerMonitor(interval time.Duration, chatChan chan string) {
+	com := "#ListPlayers"
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				//fmt.Printf("[ScheduleTasks-Module] %s:定期任务已执行\n", com)
+				chatChan <- com
+			}
+		}
+	}()
+}
+
+func TaskFunction(com string, ScheduleTasksChan chan map[string]interface{}) {
 	command := make(map[string]interface{})
 	command["steamID"] = "000000"
 	command["nickName"] = "System"
@@ -178,6 +160,7 @@ func ScheduleTasks(regCommand *map[string][]string, ScheduleTasksChan chan map[s
 	CommandRegister(cfg, regCommand)
 	go CommandHandler(ScheduleTasksChan, cfg, PmBucket, chatChan, lw)
 	ScheduleTasksTickerStartup(ScheduleTasksChan, cfg)
+	BuildInPlayerMonitor(10*time.Second, chatChan)
 	close(initChan)
 	//select {}
 }
