@@ -22,6 +22,15 @@ type Player struct {
 	LocationZ      string
 }
 
+// Vehicle 载具信息
+/*
+type Vehicle struct {
+	VehicleType string
+	VehicleID   string
+}
+
+*/
+
 // Rule 单条匹配规则
 type Rule struct {
 	Name       string
@@ -41,6 +50,7 @@ type LogWatcher struct {
 	lastOffset int64
 	mu         sync.Mutex
 	Players    map[string]Player
+	Vehicles   map[string][]string
 }
 
 // NewLogWatcher 创建实例
@@ -50,6 +60,7 @@ func NewLogWatcher(filePath string, interval time.Duration, rulesDir string) *Lo
 		Interval:   interval,
 		rulesDir:   rulesDir,
 		Players:    make(map[string]Player),
+		Vehicles:   make(map[string][]string),
 		lastOffset: 0,
 	}
 	lw.loadRules()
@@ -109,7 +120,7 @@ func (lw *LogWatcher) parseBlock(block []string) {
 			// 找出文本里所有匹配的玩家
 			matches := r.Pattern.FindAllStringSubmatch(text, -1)
 			for _, match := range matches {
-				if len(match) >= 8 { // 第0项是完整匹配，后面是捕获组
+				if len(match) == 9 { // 第0项是完整匹配，后面是捕获组
 					player := Player{
 						Name:           match[1],
 						SteamID:        match[2],
@@ -125,6 +136,10 @@ func (lw *LogWatcher) parseBlock(block []string) {
 					lw.mu.Unlock()
 					fmt.Println("[LogWatcher] 捕获玩家信息:", player.Name, player.SteamID)
 					//fmt.Printf("%s:%s %s %s\n", player.Name, player.LocationX, player.LocationY, player.LocationZ)
+				}
+				if len(match) == 3 {
+					lw.Vehicles[match[1]] = append(lw.Vehicles[match[1]], match[2])
+					fmt.Println("[LogWatcher] 捕获载具生成：", match[1], match[2])
 				}
 			}
 		}
