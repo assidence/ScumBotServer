@@ -1,1 +1,1 @@
-DestroyDiDi %s
+DestroyDiDi
