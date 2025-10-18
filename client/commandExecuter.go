@@ -5,12 +5,15 @@ import (
 	"ScumBotServer/client/execModules/DidiCar"
 	"ScumBotServer/client/execModules/Kits"
 	"ScumBotServer/client/execModules/LogWacher"
+	"ScumBotServer/client/execModules/scheduleTasks"
 	"fmt"
 )
 
 var KitsChan = make(chan map[string]interface{}, 100)
 
 var didiCarChan = make(chan map[string]interface{}, 100)
+
+var ScheduleTaskChan = make(chan map[string]interface{}, 100)
 
 var chatChan = make(chan string, 100)
 
@@ -43,6 +46,11 @@ func moduleInit(regCommand *map[string][]string) {
 	go DidiCar.DidiCar(regCommand, didiCarChan, chatChan, lw, initChan)
 	<-initChan
 	fmt.Println("[Module] 滴滴车模组已加载")
+
+	initChan = make(chan struct{})
+	go scheduleTasks.ScheduleTasks(regCommand, ScheduleTaskChan, chatChan, lw, initChan)
+	<-initChan
+	fmt.Println("[Module] 定时任务模组已加载")
 
 }
 

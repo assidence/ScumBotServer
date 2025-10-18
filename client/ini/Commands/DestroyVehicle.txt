@@ -1,1 +1,1 @@
-#DestroyVehicle %s
+DestroyDiDi %s

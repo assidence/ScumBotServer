@@ -96,17 +96,17 @@ func (m *Manager) Close() error {
 func (m *Manager) signalListener() {
 	defer m.wg.Done()
 	for {
-		fmt.Println("[PmBucket] signalListener Running")
+		//fmt.Println("[PmBucket] signalListener Running")
 		select {
 		case newCfg, ok := <-m.CommandConfigChan:
-			fmt.Println("CommandConfigChan Reviced Data!")
+			//fmt.Println("CommandConfigChan Reviced Data!")
 			if !ok {
 				return
 			}
 			// newCfg: map[commandName]map[string]interface{}
 			m.mergeConfig(newCfg)
 		case <-m.quit:
-			fmt.Println("[PmBucket] signalListener Quit")
+			//fmt.Println("[PmBucket] signalListener Quit")
 			return
 		}
 	}

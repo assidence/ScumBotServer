@@ -39,6 +39,9 @@ func (c *Config) Load() error {
 	tempData := make(map[string]map[string]interface{})
 
 	for _, section := range iniCfg.Sections() {
+		if section.Name() == "DEFAULT" { // 跳过 DEFAULT
+			continue
+		}
 		secMap := make(map[string]interface{})
 		for _, key := range section.Keys() {
 			secMap[key.Name()] = parseValue(key.String())
