@@ -167,7 +167,7 @@ func RunLogWatcher(lw *LogWatcher, LWChan chan *LogWatcher, initChan chan struct
 	rulesDir := "./ini/LogWatcher/"
 
 	// 创建 LogWatcher
-	lw = NewLogWatcher(logFile, 2*time.Second, rulesDir)
+	lw = NewLogWatcher(logFile, 1*time.Second, rulesDir)
 
 	// 开始监控日志
 	lw.Start()

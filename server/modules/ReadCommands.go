@@ -1,7 +1,7 @@
 package modules
 
 import (
-	Utf16tail "ScumBotServer/modules/tail"
+	"ScumBotServer/server/modules/tail"
 )
 
 func ReadCommand(filePath string) *chan *Utf16tail.Line {
