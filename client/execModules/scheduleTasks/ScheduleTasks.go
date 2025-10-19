@@ -76,6 +76,7 @@ func CommandHandler(ScheduleTasksChan chan map[string]interface{}, cfg *execModu
 				fmt.Println("[ScheduleTasks-Module]:" + lines)
 			}
 		}
+		chatChan <- fmt.Sprintf("%s 任务执行完成", command["nickName"].(string))
 	}
 	defer PMbucket.Close()
 }

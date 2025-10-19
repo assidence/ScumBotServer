@@ -73,6 +73,7 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 				fmt.Println("[Kits-Module]:" + lines)
 			}
 		}
+		chatChan <- fmt.Sprintf("%s 礼包发放完成", command["nickName"].(string))
 	}
 	defer PMbucket.Close()
 }

@@ -74,6 +74,7 @@ func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Co
 				fmt.Println("[DidiCar-Module]:" + lines)
 			}
 		}
+		chatChan <- fmt.Sprintf("%s 滴滴车已到达", command["nickName"].(string))
 	}
 	defer PMbucket.Close()
 }
