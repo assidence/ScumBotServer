@@ -1,1 +1,331 @@
 package Prefix
+
+import (
+	"ScumBotServer/client/execModules"
+	"ScumBotServer/client/execModules/CommandSelecter"
+	"ScumBotServer/client/execModules/LogWacher"
+	"database/sql"
+	"fmt"
+	"strings"
+	"sync"
+
+	_ "github.com/mattn/go-sqlite3"
+)
+
+// TitleCommandType 指令类型
+type TitleCommandType string
+
+const (
+	CommandGrant  TitleCommandType = "@给予称号" // 授予称号
+	CommandRemove TitleCommandType = "@移除称号" // 移除称号
+	CommandSet    TitleCommandType = "@设置称号" // 设置当前称号
+)
+
+// TitleCommand 外部模块发送过来的指令
+type TitleCommand struct {
+	UserID  string
+	Command TitleCommandType
+	Title   string
+}
+
+// PlayerTitle 玩家称号记录
+type PlayerTitle struct {
+	UserID string
+	Title  string
+	Active bool
+}
+
+// TitleManager 核心管理器
+type TitleManager struct {
+	db     *sql.DB
+	cmdCh  chan TitleCommand
+	mu     sync.Mutex
+	wg     sync.WaitGroup
+	closed bool
+}
+
+// NewTitleManager 创建并初始化模块
+func NewTitleManager(dbPath string, chatChan chan string) (*TitleManager, error) {
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return nil, err
+	}
+
+	manager := &TitleManager{
+		db:    db,
+		cmdCh: make(chan TitleCommand, 64),
+	}
+
+	if err := manager.initDB(); err != nil {
+		return nil, err
+	}
+
+	manager.wg.Add(1)
+	go manager.listenCommands(chatChan)
+
+	return manager, nil
+}
+
+// 初始化数据库
+func (m *TitleManager) initDB() error {
+	sqlStmt := `
+	CREATE TABLE IF NOT EXISTS player_titles (
+		user_id TEXT NOT NULL,
+		title TEXT NOT NULL,
+		active INTEGER DEFAULT 0,
+		PRIMARY KEY (user_id, title)
+	);
+	`
+	_, err := m.db.Exec(sqlStmt)
+	return err
+}
+
+// 监听来自其他模块的指令
+func (m *TitleManager) listenCommands(chatChan chan string) {
+	defer m.wg.Done()
+	for cmd := range m.cmdCh {
+		switch cmd.Command {
+		case CommandGrant:
+			if err := m.grantTitle(cmd.UserID, cmd.Title); err != nil {
+				chatChan <- fmt.Sprintf("授予称号失败: %v", err)
+				fmt.Println("[Error-Prefix] " + fmt.Sprintf("授予称号失败: %v", err))
+			} else {
+				chatChan <- fmt.Sprintf("[Error-Prefix] 玩家 %s 获得称号 %s", cmd.UserID, cmd.Title)
+				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] 玩家 %s 获得称号 %s", cmd.UserID, cmd.Title))
+			}
+
+		case CommandRemove:
+			if err := m.removeTitle(cmd.UserID, cmd.Title); err != nil {
+				chatChan <- fmt.Sprintf("[Error-Prefix] 移除称号失败: %v", err)
+				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] 移除称号失败: %v", err))
+			} else {
+				chatChan <- fmt.Sprintf("[Error-Prefix] 玩家 %s 移除称号 %s", cmd.UserID, cmd.Title)
+				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] 玩家 %s 移除称号 %s", cmd.UserID, cmd.Title))
+			}
+
+		case CommandSet:
+			if err := m.setActiveTitle(cmd.UserID, cmd.Title); err != nil {
+				chatChan <- fmt.Sprintf("[Error-Prefix] 设置当前称号失败: %v", err)
+				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] 设置当前称号失败: %v", err))
+			} else {
+				chatChan <- fmt.Sprintf("[Error-Prefix] 玩家 %s 当前称号设为 %s", cmd.UserID, cmd.Title)
+				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] 玩家 %s 当前称号设为 %s", cmd.UserID, cmd.Title))
+			}
+		}
+	}
+}
+
+// grantTitle 授予称号
+func (m *TitleManager) grantTitle(userID, title string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	_, err := m.db.Exec(`
+	INSERT OR IGNORE INTO player_titles (user_id, title, active)
+	VALUES (?, ?, 0)
+	`, userID, title)
+	return err
+}
+
+// removeTitle 移除称号
+func (m *TitleManager) removeTitle(userID, title string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	_, err := m.db.Exec(`
+	DELETE FROM player_titles WHERE user_id = ? AND title = ?
+	`, userID, title)
+	return err
+}
+
+// setActiveTitle 设置当前使用称号
+func (m *TitleManager) setActiveTitle(userID, title string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	tx, err := m.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec(`UPDATE player_titles SET active = 0 WHERE user_id = ?`, userID)
+	if err != nil {
+		return err
+	}
+
+	res, err := tx.Exec(`
+	UPDATE player_titles SET active = 1 WHERE user_id = ? AND title = ?
+	`, userID, title)
+	if err != nil {
+		return err
+	}
+
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("玩家 %s 没有称号 %s", userID, title)
+	}
+
+	return tx.Commit()
+}
+
+// HasTitle 查询玩家是否拥有称号
+func (m *TitleManager) HasTitle(userID, title string) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	var count int
+	err := m.db.QueryRow(`
+	SELECT COUNT(*) FROM player_titles WHERE user_id = ? AND title = ?
+	`, userID, title).Scan(&count)
+	return count > 0, err
+}
+
+// GetActiveTitle 查询当前使用称号
+func (m *TitleManager) GetActiveTitle(userID string) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	var title string
+	err := m.db.QueryRow(`
+	SELECT title FROM player_titles WHERE user_id = ? AND active = 1
+	`, userID).Scan(&title)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	return title, err
+}
+
+// CommandChan 返回供外部发送指令的通道
+func (m *TitleManager) CommandChan() chan<- TitleCommand {
+	return m.cmdCh
+}
+
+// Close 关闭模块
+func (m *TitleManager) Close() {
+	if m.closed {
+		return
+	}
+	close(m.cmdCh)
+	m.wg.Wait()
+	m.db.Close()
+	m.closed = true
+}
+
+//==============================================================
+
+func iniLoader() *execModules.Config {
+	cfg, err := execModules.NewConfig("./ini/Prefix.ini")
+	//fmt.Println(cfg)
+	if err != nil {
+		fmt.Println("[ERROR-Prefix]->Error:", err)
+		return &execModules.Config{}
+	}
+	var commandList []string
+	//fmt.Println(cfg.Data)
+	for section, secMap := range cfg.Data {
+		//fmt.Println(secMap)
+		if section == "DEFAULT" {
+			continue
+		}
+		commandFilePart := secMap["Command"].(string)
+		commandList, err = execModules.CommandFileReadLines(commandFilePart)
+		if err != nil {
+			fmt.Println("[ERROR-Prefix]->Error:", err)
+		}
+		cfg.Data[section]["Command"] = commandList
+	}
+	return cfg
+}
+
+/*
+func createPermissionBucket() *permissionBucket.Manager {
+	PmBucket, err := permissionBucket.NewManager("./db/PrefixPermission.db")
+	if err != nil {
+		panic(err)
+	}
+	//defer PmBucket.Close()
+
+	return PmBucket
+}
+
+*/
+
+func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
+	var commandList []string
+
+	for section, _ := range cfg.Data {
+		commandList = append(commandList, section)
+	}
+	(*regCommand)["Prefix"] = commandList
+}
+
+/*
+	func commandSelecterForPrefix(command string) TitleCommand {
+		var titleCommandExec TitleCommand
+		commandPart := strings.Split(command, "-")
+		cmd := TitleCommandType(commandPart[0])
+		switch cmd {
+		case CommandGrant:
+			titleCommandExec{UserID}
+		case CommandRemove:
+		case CommandSet:
+		}
+		return titleCommandExec
+	}
+*/
+func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Config, chatChan chan string, lw *LogWacher.LogWatcher) {
+	var commandLines []string
+	for command := range PrefixChan {
+		chatChan <- fmt.Sprintf("%s 称号命令执行中 请耐心等待", command["nickName"].(string))
+		//fmt.Println(command["command"].(string))
+		//fmt.Println(cfg.Data)
+		//fmt.Println(cfg.Data[command["command"].(string)]["Command"])
+		commandPart := strings.Split(command["command"].(string), "-")
+		/*
+			ok, msg := PMbucket.CanExecute(command["steamID"].(string), commandPart[0])
+			//fmt.Println(command["steamID"].(string) + command["command"].(string))
+			if !ok {
+				fmt.Println("[ERROR-Prefix]->Error:", msg)
+				continue
+			}
+
+		*/
+		// Prefix limit
+		if cfg.Data[commandPart[0]]["PrefixRequire"].(string) != "false" {
+			var1 := command["steamID"].(string)
+			var2 := cfg.Data[commandPart[0]]["PrefixRequire"].(string)
+			ok, _ := manager.HasTitle(var1, var2)
+			if !ok {
+				fmt.Sprintf("[Permission] 执行此命令需要称号【%s】", cfg.Data[commandPart[0]]["PrefixRequire"].(string))
+				continue
+			}
+		}
+		manager.cmdCh <- TitleCommand{UserID: commandPart[1], Command: TitleCommandType(commandPart[0]), Title: commandPart[2]}
+		commandLines = cfg.Data[commandPart[0]]["Command"].([]string)
+		for _, cfgCommand := range commandLines {
+			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand, lw)
+			for _, lines := range cfglines {
+				chatChan <- lines
+				fmt.Println("[Prefix-Module]:" + lines)
+			}
+		}
+
+		chatChan <- fmt.Sprintf("%s 已执行称号命令", command["nickName"].(string))
+	}
+	//defer PMbucket.Close()
+}
+
+var manager *TitleManager
+
+func Prefix(regCommand *map[string][]string, PrefixChan chan map[string]interface{}, chatChan chan string, lw *LogWacher.LogWatcher, PrefixTitleManagerChan chan *TitleManager, initChan chan struct{}) {
+	cfg := iniLoader()
+	//PmBucket := createPermissionBucket()
+	//PmBucket.CommandConfigChan <- cfg.Data
+	CommandRegister(cfg, regCommand)
+	manager, _ = NewTitleManager("./ini/titles.db", chatChan)
+	go CommandHandler(PrefixChan, cfg, chatChan, lw)
+	PrefixTitleManagerChan <- manager
+	close(initChan)
+	//select {}
+}

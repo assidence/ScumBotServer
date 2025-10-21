@@ -5,6 +5,7 @@ import (
 	"ScumBotServer/client/execModules/DidiCar"
 	"ScumBotServer/client/execModules/Kits"
 	"ScumBotServer/client/execModules/LogWacher"
+	"ScumBotServer/client/execModules/Prefix"
 	"ScumBotServer/client/execModules/scheduleTasks"
 	"fmt"
 )
@@ -15,6 +16,8 @@ var didiCarChan = make(chan map[string]interface{}, 100)
 
 var ScheduleTaskChan = make(chan map[string]interface{}, 100)
 
+var PrefixChan = make(chan map[string]interface{}, 100)
+
 var chatChan = make(chan string, 100)
 
 var lw = &LogWacher.LogWatcher{
@@ -22,6 +25,8 @@ var lw = &LogWacher.LogWatcher{
 	Interval: 0,
 	Players:  nil,
 }
+
+var TitleManager *Prefix.TitleManager
 
 // moduleInit initiation the command function module
 func moduleInit(regCommand *map[string][]string) {
@@ -38,17 +43,24 @@ func moduleInit(regCommand *map[string][]string) {
 	fmt.Println("[Module] 客户端日志监控模组已加载")
 
 	initChan = make(chan struct{})
-	go Kits.Kits(regCommand, KitsChan, chatChan, lw, initChan)
+	var PrefixTitleManagerChan = make(chan *Prefix.TitleManager)
+	go Prefix.Prefix(regCommand, PrefixChan, chatChan, lw, PrefixTitleManagerChan, initChan)
+	TitleManager = <-PrefixTitleManagerChan
+	<-initChan
+	fmt.Println("[Module] 称号模组已加载")
+
+	initChan = make(chan struct{})
+	go Kits.Kits(regCommand, KitsChan, chatChan, lw, TitleManager, initChan)
 	<-initChan
 	fmt.Println("[Module] 新手礼包模组已加载")
 
 	initChan = make(chan struct{})
-	go DidiCar.DidiCar(regCommand, didiCarChan, chatChan, lw, initChan)
+	go DidiCar.DidiCar(regCommand, didiCarChan, chatChan, lw, TitleManager, initChan)
 	<-initChan
 	fmt.Println("[Module] 滴滴车模组已加载")
 
 	initChan = make(chan struct{})
-	go scheduleTasks.ScheduleTasks(regCommand, ScheduleTaskChan, chatChan, lw, initChan)
+	go scheduleTasks.ScheduleTasks(regCommand, ScheduleTaskChan, chatChan, lw, TitleManager, initChan)
 	<-initChan
 	fmt.Println("[Module] 定时任务模组已加载")
 

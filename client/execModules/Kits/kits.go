@@ -4,6 +4,7 @@ import (
 	"ScumBotServer/client/execModules"
 	"ScumBotServer/client/execModules/CommandSelecter"
 	"ScumBotServer/client/execModules/LogWacher"
+	"ScumBotServer/client/execModules/Prefix"
 	"ScumBotServer/client/execModules/permissionBucket"
 	"fmt"
 )
@@ -78,10 +79,11 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 	defer PMbucket.Close()
 }
 
-func Kits(regCommand *map[string][]string, KitsChan chan map[string]interface{}, chatChan chan string, lw *LogWacher.LogWatcher, initChan chan struct{}) {
+func Kits(regCommand *map[string][]string, KitsChan chan map[string]interface{}, chatChan chan string, lw *LogWacher.LogWatcher, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
 	cfg := iniLoader()
 	PmBucket := createPermissionBucket()
 	PmBucket.CommandConfigChan <- cfg.Data
+	PmBucket.TitleManager = TitleManager
 	CommandRegister(cfg, regCommand)
 	go CommandHandler(KitsChan, cfg, PmBucket, chatChan, lw)
 	close(initChan)

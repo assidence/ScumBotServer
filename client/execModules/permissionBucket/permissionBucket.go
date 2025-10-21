@@ -1,6 +1,7 @@
 package permissionBucket
 
 import (
+	"ScumBotServer/client/execModules/Prefix"
 	"database/sql"
 	"fmt"
 	"strconv"
@@ -43,6 +44,7 @@ type Manager struct {
 	quit              chan struct{}
 	wg                sync.WaitGroup
 	CommandConfigChan chan map[string]map[string]interface{}
+	TitleManager      *Prefix.TitleManager
 }
 
 // NewManager 创建并初始化 sqlite 表
@@ -293,6 +295,13 @@ func (m *Manager) CanExecute(playerID, command string) (bool, string) {
 	// total limit
 	if cfg.TotalLimit >= 0 && b.TotalCount >= cfg.TotalLimit {
 		return false, fmt.Sprintf("[Permission] 总次数已达上限 %d/%d", b.TotalCount, cfg.TotalLimit)
+	}
+	// Prefix limit
+	if cfg.PrefixRequire != "false" {
+		ok, _ := m.TitleManager.HasTitle(playerID, cfg.PrefixRequire)
+		if !ok {
+			return false, fmt.Sprintf("[Permission] 执行此命令需要称号【%s】", cfg.PrefixRequire)
+		}
 	}
 	return true, "[Permission] 允许执行"
 }
