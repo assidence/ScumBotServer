@@ -1,1 +1,1 @@
-ListOnlinePlayers
+ListPlayers
