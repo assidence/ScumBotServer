@@ -90,8 +90,8 @@ func (m *TitleManager) listenCommands(chatChan chan string) {
 				chatChan <- fmt.Sprintf("授予称号失败: %v", err)
 				fmt.Println("[Error-Prefix] " + fmt.Sprintf("授予称号失败: %v", err))
 			} else {
-				chatChan <- fmt.Sprintf("[Error-Prefix] 玩家 %s 获得称号 %s", cmd.UserID, cmd.Title)
-				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] 玩家 %s 获得称号 %s", cmd.UserID, cmd.Title))
+				chatChan <- fmt.Sprintf("[Prefix-Module] 玩家 %s 获得称号 %s", cmd.UserID, cmd.Title)
+				fmt.Printf("[Prefix-Module]  玩家 %s 获得称号 %s\n", cmd.UserID, cmd.Title)
 			}
 
 		case CommandRemove:
@@ -99,17 +99,17 @@ func (m *TitleManager) listenCommands(chatChan chan string) {
 				chatChan <- fmt.Sprintf("[Error-Prefix] 移除称号失败: %v", err)
 				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] 移除称号失败: %v", err))
 			} else {
-				chatChan <- fmt.Sprintf("[Error-Prefix] 玩家 %s 移除称号 %s", cmd.UserID, cmd.Title)
-				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] 玩家 %s 移除称号 %s", cmd.UserID, cmd.Title))
+				chatChan <- fmt.Sprintf("[Prefix-Module] 玩家 %s 移除称号 %s", cmd.UserID, cmd.Title)
+				fmt.Printf("[Prefix-Module] 玩家 %s 移除称号 %s\n", cmd.UserID, cmd.Title)
 			}
 
 		case CommandSet:
 			if err := m.setActiveTitle(cmd.UserID, cmd.Title); err != nil {
 				chatChan <- fmt.Sprintf("[Error-Prefix] 设置当前称号失败: %v", err)
-				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] 设置当前称号失败: %v", err))
+				fmt.Printf("[Error-Prefix] 设置当前称号失败: %v\n", err)
 			} else {
-				chatChan <- fmt.Sprintf("[Error-Prefix] 玩家 %s 当前称号设为 %s", cmd.UserID, cmd.Title)
-				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] 玩家 %s 当前称号设为 %s", cmd.UserID, cmd.Title))
+				chatChan <- fmt.Sprintf("[Prefix-Module] 玩家 %s 当前称号设为 %s", cmd.UserID, cmd.Title)
+				fmt.Printf("[Prefix-Module] 玩家 %s 当前称号设为 %s", cmd.UserID, cmd.Title)
 			}
 		}
 	}
@@ -281,7 +281,8 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 		//fmt.Println(command["command"].(string))
 		//fmt.Println(cfg.Data)
 		//fmt.Println(cfg.Data[command["command"].(string)]["Command"])
-		commandPart := strings.Split(command["command"].(string), "-")
+		commandString := command["command"].(string)
+		commandArgs := strings.Split(command["commandArgs"].(string), "-")
 		/*
 			ok, msg := PMbucket.CanExecute(command["steamID"].(string), commandPart[0])
 			//fmt.Println(command["steamID"].(string) + command["command"].(string))
@@ -292,17 +293,17 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 
 		*/
 		// Prefix limit
-		if cfg.Data[commandPart[0]]["PrefixRequire"].(string) != "false" {
+		if cfg.Data[commandString]["PrefixRequire"].(string) != "default" {
 			var1 := command["steamID"].(string)
-			var2 := cfg.Data[commandPart[0]]["PrefixRequire"].(string)
+			var2 := cfg.Data[commandString]["PrefixRequire"].(string)
 			ok, _ := manager.HasTitle(var1, var2)
 			if !ok {
-				fmt.Sprintf("[Permission] 执行此命令需要称号【%s】", cfg.Data[commandPart[0]]["PrefixRequire"].(string))
+				chatChan <- fmt.Sprintf("[Permission] 执行此命令需要称号【%s】", cfg.Data[commandString]["PrefixRequire"].(string))
 				continue
 			}
 		}
-		manager.cmdCh <- TitleCommand{UserID: commandPart[1], Command: TitleCommandType(commandPart[0]), Title: commandPart[2]}
-		commandLines = cfg.Data[commandPart[0]]["Command"].([]string)
+		manager.cmdCh <- TitleCommand{UserID: commandArgs[0], Command: TitleCommandType(commandString), Title: commandArgs[1]}
+		commandLines = cfg.Data[commandString]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
 			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand, lw)
 			for _, lines := range cfglines {
@@ -323,7 +324,7 @@ func Prefix(regCommand *map[string][]string, PrefixChan chan map[string]interfac
 	//PmBucket := createPermissionBucket()
 	//PmBucket.CommandConfigChan <- cfg.Data
 	CommandRegister(cfg, regCommand)
-	manager, _ = NewTitleManager("./ini/titles.db", chatChan)
+	manager, _ = NewTitleManager("./db/Prefix.db", chatChan)
 	go CommandHandler(PrefixChan, cfg, chatChan, lw)
 	PrefixTitleManagerChan <- manager
 	close(initChan)

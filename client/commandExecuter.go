@@ -91,6 +91,9 @@ func commandSelecter(command map[string]interface{}, regCommand *map[string][]st
 			case "ScheduleTasks":
 				ScheduleTaskChan <- command
 				return
+			case "Prefix":
+				PrefixChan <- command
+				return
 			}
 		}
 	}

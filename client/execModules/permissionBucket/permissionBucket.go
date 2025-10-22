@@ -297,7 +297,7 @@ func (m *Manager) CanExecute(playerID, command string) (bool, string) {
 		return false, fmt.Sprintf("[Permission] 总次数已达上限 %d/%d", b.TotalCount, cfg.TotalLimit)
 	}
 	// Prefix limit
-	if cfg.PrefixRequire != "false" {
+	if cfg.PrefixRequire != "" {
 		ok, _ := m.TitleManager.HasTitle(playerID, cfg.PrefixRequire)
 		if !ok {
 			return false, fmt.Sprintf("[Permission] 执行此命令需要称号【%s】", cfg.PrefixRequire)
