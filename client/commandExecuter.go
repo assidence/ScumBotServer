@@ -2,6 +2,7 @@ package main
 
 import (
 	"ScumBotServer/client/execModules"
+	"ScumBotServer/client/execModules/Announcer"
 	"ScumBotServer/client/execModules/DidiCar"
 	"ScumBotServer/client/execModules/Kits"
 	"ScumBotServer/client/execModules/LogWacher"
@@ -17,6 +18,8 @@ var didiCarChan = make(chan map[string]interface{}, 100)
 var ScheduleTaskChan = make(chan map[string]interface{}, 100)
 
 var PrefixChan = make(chan map[string]interface{}, 100)
+
+var AnnouncerChan = make(chan map[string]interface{}, 100)
 
 var chatChan = make(chan string, 100)
 
@@ -64,6 +67,11 @@ func moduleInit(regCommand *map[string][]string) {
 	<-initChan
 	fmt.Println("[Module] 定时任务模组已加载")
 
+	initChan = make(chan struct{})
+	go Announcer.Announcer(regCommand, AnnouncerChan, chatChan, lw, TitleManager, initChan)
+	<-initChan
+	fmt.Println("[Module] 广播模组已加载")
+
 }
 
 func listToMap(list []string) map[string]struct{} {
@@ -93,6 +101,9 @@ func commandSelecter(command map[string]interface{}, regCommand *map[string][]st
 				return
 			case "Prefix":
 				PrefixChan <- command
+				return
+			case "Announcer":
+				AnnouncerChan <- command
 				return
 			}
 		}

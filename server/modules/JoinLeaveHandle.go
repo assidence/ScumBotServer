@@ -9,7 +9,7 @@ func JoinLeaveHandler(regstring string, commch <-chan string, execch chan string
 	re := regexp.MustCompile(regstring)
 	var jsonByte []byte
 	execData := map[string]string{
-		"steamID":     "0",
+		"steamID":     "000000",
 		"nickName":    "System",
 		"command":     "0",
 		"commandArgs": "0",
