@@ -109,7 +109,7 @@ func (m *TitleManager) listenCommands(chatChan chan string) {
 				fmt.Printf("[Error-Prefix] 设置当前称号失败: %v\n", err)
 			} else {
 				chatChan <- fmt.Sprintf("[Prefix-Module] 玩家 %s 当前称号设为 %s", cmd.UserID, cmd.Title)
-				fmt.Printf("[Prefix-Module] 玩家 %s 当前称号设为 %s", cmd.UserID, cmd.Title)
+				fmt.Printf("[Prefix-Module] 玩家 %s 当前称号设为 %s\n", cmd.UserID, cmd.Title)
 			}
 		}
 	}
@@ -282,7 +282,7 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 		//fmt.Println(cfg.Data)
 		//fmt.Println(cfg.Data[command["command"].(string)]["Command"])
 		commandString := command["command"].(string)
-		commandArgs := strings.Split(command["commandArgs"].(string), "-")
+		commandArgs := strings.Split(command["commandArgs"].(string), " ")
 		/*
 			ok, msg := PMbucket.CanExecute(command["steamID"].(string), commandPart[0])
 			//fmt.Println(command["steamID"].(string) + command["command"].(string))

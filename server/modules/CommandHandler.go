@@ -27,10 +27,10 @@ func CommandHandler(regstring string, commch <-chan string, execch chan string) 
 		if len(matches) > 2 {
 			execData["steamID"] = matches[1]
 			execData["nickName"] = matches[2]
-			com := strings.Split(matches[3], "-")
+			com := strings.Split(matches[3], " ")
 			execData["command"] = com[0]
 			//execData["command"] = matches[3]
-			execData["commandArgs"] = strings.Join(com[1:], "-")
+			execData["commandArgs"] = strings.Join(com[1:], " ")
 			jsonByte = sequenceJson(&execData)
 			execch <- string(jsonByte)
 		} else {
