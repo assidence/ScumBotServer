@@ -163,7 +163,7 @@ func ScheduleTasks(regCommand *map[string][]string, ScheduleTasksChan chan map[s
 	CommandRegister(cfg, regCommand)
 	go CommandHandler(ScheduleTasksChan, cfg, PmBucket, chatChan, lw)
 	ScheduleTasksTickerStartup(ScheduleTasksChan, cfg)
-	//BuildInPlayerMonitor(10*time.Second, chatChan)
+	BuildInPlayerMonitor(10*time.Second, chatChan)
 	close(initChan)
 	//select {}
 }
