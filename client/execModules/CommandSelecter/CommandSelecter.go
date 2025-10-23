@@ -31,6 +31,16 @@ func Selecter(steamID string, cfgCommand string, lw *LogWacher.LogWatcher) []str
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, PLocationX, PLocationY, PLocationZ))
 	case "ListPlayers":
 		cfgChat = append(cfgChat, commandPrefix+cfgCommand)
+	case "SetFakeName":
+		var nickName string
+		if lw.Players[steamID].Prefix != "" {
+			nickName = fmt.Sprintf("-★%s★-%s", lw.Players[steamID].Prefix, lw.Players[steamID].Name)
+		} else {
+			fmt.Println("CommandSelecter:")
+			//fmt.Println(lw.Players[steamID])
+			nickName = lw.Players[steamID].Name
+		}
+		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID, nickName))
 	default:
 		fmt.Println("[ERROR-CommandSelecter]->Error:无法匹配命令 ", cmd)
 	}

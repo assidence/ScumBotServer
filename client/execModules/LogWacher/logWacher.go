@@ -20,6 +20,7 @@ type Player struct {
 	LocationX      string
 	LocationY      string
 	LocationZ      string
+	Prefix         string
 }
 
 // Vehicle 载具信息

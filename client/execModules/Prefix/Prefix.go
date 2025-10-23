@@ -19,6 +19,7 @@ const (
 	CommandGrant  TitleCommandType = "@给予称号" // 授予称号
 	CommandRemove TitleCommandType = "@移除称号" // 移除称号
 	CommandSet    TitleCommandType = "@设置称号" // 设置当前称号
+	CommandUnSet  TitleCommandType = "@取消称号"
 )
 
 // TitleCommand 外部模块发送过来的指令
@@ -26,6 +27,7 @@ type TitleCommand struct {
 	UserID  string
 	Command TitleCommandType
 	Title   string
+	Done    chan struct{}
 }
 
 // PlayerTitle 玩家称号记录
@@ -87,31 +89,42 @@ func (m *TitleManager) listenCommands(chatChan chan string) {
 		switch cmd.Command {
 		case CommandGrant:
 			if err := m.grantTitle(cmd.UserID, cmd.Title); err != nil {
-				chatChan <- fmt.Sprintf("授予称号失败: %v", err)
+				//chatChan <- fmt.Sprintf("授予称号失败: %v", err)
 				fmt.Println("[Error-Prefix] " + fmt.Sprintf("授予称号失败: %v", err))
 			} else {
-				chatChan <- fmt.Sprintf("[Prefix-Module] 玩家 %s 获得称号 %s", cmd.UserID, cmd.Title)
+				//chatChan <- fmt.Sprintf("获得称号 %s", cmd.UserID, cmd.Title)
 				fmt.Printf("[Prefix-Module]  玩家 %s 获得称号 %s\n", cmd.UserID, cmd.Title)
 			}
 
 		case CommandRemove:
 			if err := m.removeTitle(cmd.UserID, cmd.Title); err != nil {
-				chatChan <- fmt.Sprintf("[Error-Prefix] 移除称号失败: %v", err)
+				//chatChan <- fmt.Sprintf("移除称号失败: %v", err)
 				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] 移除称号失败: %v", err))
 			} else {
-				chatChan <- fmt.Sprintf("[Prefix-Module] 玩家 %s 移除称号 %s", cmd.UserID, cmd.Title)
+				//chatChan <- fmt.Sprintf("玩家 %s 移除称号 %s", cmd.UserID, cmd.Title)
 				fmt.Printf("[Prefix-Module] 玩家 %s 移除称号 %s\n", cmd.UserID, cmd.Title)
 			}
 
 		case CommandSet:
 			if err := m.setActiveTitle(cmd.UserID, cmd.Title); err != nil {
-				chatChan <- fmt.Sprintf("[Error-Prefix] 设置当前称号失败: %v", err)
-				fmt.Printf("[Error-Prefix] 设置当前称号失败: %v\n", err)
+				chatChan <- fmt.Sprintf("设置当前称号失败: %v", err)
+				fmt.Printf("[Error-Prefix] 玩家 %s设置当前称号失败: %v\n", cmd.UserID, err)
 			} else {
-				chatChan <- fmt.Sprintf("[Prefix-Module] 玩家 %s 当前称号设为 %s", cmd.UserID, cmd.Title)
+				p := lw.Players[cmd.UserID]
+				p.Prefix = cmd.Title
+				lw.Players[cmd.UserID] = p
+				//fmt.Println(p)
+				chatChan <- fmt.Sprintf("当前称号设为 %s", cmd.Title)
 				fmt.Printf("[Prefix-Module] 玩家 %s 当前称号设为 %s\n", cmd.UserID, cmd.Title)
 			}
+		case CommandUnSet:
+			p := lw.Players[cmd.UserID]
+			p.Prefix = ""
+			lw.Players[cmd.UserID] = p
+			chatChan <- fmt.Sprintf("当前称号已取消展示")
+			fmt.Printf("[Prefix-Module] 玩家 %s 当前称号已取消展示\n", cmd.UserID, cmd.Title)
 		}
+		close(cmd.Done)
 	}
 }
 
@@ -165,7 +178,6 @@ func (m *TitleManager) setActiveTitle(userID, title string) error {
 	if rows == 0 {
 		return fmt.Errorf("玩家 %s 没有称号 %s", userID, title)
 	}
-
 	return tx.Commit()
 }
 
@@ -302,7 +314,16 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 				continue
 			}
 		}
-		manager.cmdCh <- TitleCommand{UserID: commandArgs[0], Command: TitleCommandType(commandString), Title: commandArgs[1]}
+		if len(commandArgs) == 1 {
+			commandArgs = append(commandArgs, "")
+		}
+		if commandArgs[1] == "" {
+			commandArgs[1] = command["steamID"].(string)
+		}
+
+		Done := make(chan struct{})
+		manager.cmdCh <- TitleCommand{UserID: commandArgs[1], Command: TitleCommandType(commandString), Title: commandArgs[0], Done: Done}
+		<-Done
 		commandLines = cfg.Data[commandString]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
 			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand, lw)
@@ -318,13 +339,15 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 }
 
 var manager *TitleManager
+var lw *LogWacher.LogWatcher
 
-func Prefix(regCommand *map[string][]string, PrefixChan chan map[string]interface{}, chatChan chan string, lw *LogWacher.LogWatcher, PrefixTitleManagerChan chan *TitleManager, initChan chan struct{}) {
+func Prefix(regCommand *map[string][]string, PrefixChan chan map[string]interface{}, chatChan chan string, lwarg *LogWacher.LogWatcher, PrefixTitleManagerChan chan *TitleManager, initChan chan struct{}) {
 	cfg := iniLoader()
 	//PmBucket := createPermissionBucket()
 	//PmBucket.CommandConfigChan <- cfg.Data
 	CommandRegister(cfg, regCommand)
 	manager, _ = NewTitleManager("./db/Prefix.db", chatChan)
+	lw = lwarg
 	go CommandHandler(PrefixChan, cfg, chatChan, lw)
 	PrefixTitleManagerChan <- manager
 	close(initChan)
