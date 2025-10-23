@@ -23,7 +23,8 @@ func JoinLeaveHandler(regstring string, commch <-chan string, execch chan string
 			jsonByte = sequenceJson(&execData)
 			execch <- string(jsonByte)
 		} else {
-			fmt.Printf("[玩家聊天]%s\n", line)
+			fmt.Println("[JoinLeave-Error]未匹配到行为日志:")
+			fmt.Println(line)
 		}
 	}
 }
