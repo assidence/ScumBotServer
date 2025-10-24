@@ -24,7 +24,8 @@ const (
 
 // TitleCommand 外部模块发送过来的指令
 type TitleCommand struct {
-	UserID  string
+	UserID string
+	//UserNickname string
 	Command TitleCommandType
 	Title   string
 	Done    chan struct{}
@@ -339,6 +340,7 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 }
 
 var manager *TitleManager
+
 var lw *LogWacher.LogWatcher
 
 func Prefix(regCommand *map[string][]string, PrefixChan chan map[string]interface{}, chatChan chan string, lwarg *LogWacher.LogWatcher, PrefixTitleManagerChan chan *TitleManager, initChan chan struct{}) {
