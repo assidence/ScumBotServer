@@ -143,8 +143,10 @@ func recordSelecter(steamID string, action string, targetQuantity string, record
 	switch action {
 	case "Kill":
 	case "Death":
-	case "Buy":
-	case "Sell":
+	case "purchased":
+	case "sold":
+	case "deposit":
+	case "destroyed_card":
 
 	}
 	// 玩家购买物品

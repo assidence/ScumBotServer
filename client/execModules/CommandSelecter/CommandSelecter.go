@@ -42,7 +42,8 @@ func Selecter(steamID string, cfgCommand string, lw *LogWacher.LogWatcher) []str
 		}
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID, nickName))
 	default:
-		fmt.Println("[ERROR-CommandSelecter]->Error:无法匹配命令 ", cmd)
+		//fmt.Println("[ERROR-CommandSelecter]->Error:无法匹配命令 ", cmd)
+		cfgChat = append(cfgChat, cmd)
 	}
 	return cfgChat
 }
