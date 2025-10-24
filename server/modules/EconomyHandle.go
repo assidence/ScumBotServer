@@ -48,11 +48,11 @@ func EconomyHandler(ecoch chan string, execch chan string) {
 			result := parseClassicTrade(timestamp, content)
 			//fmt.Println(result)
 			if result == nil {
-				fmt.Println("[Economy-Error] No Trade event")
+				fmt.Println("[Economy-Error] No Trade event：", content)
 				continue
 			}
 			execData["command"] = result.Action
-			execData["CommandArgs"] = fmt.Sprintf("%s-%s-%d", result.PlayerID, result.ItemName, result.Amount)
+			execData["commandArgs"] = fmt.Sprintf("%s-%s-%d", result.PlayerID, result.ItemName, result.Amount)
 		case "Trade-Mechanic":
 			result := parseMechanicTrade(timestamp, content)
 			//fmt.Println(result)
@@ -61,7 +61,7 @@ func EconomyHandler(ecoch chan string, execch chan string) {
 				continue
 			}
 			execData["command"] = result.Action
-			execData["CommandArgs"] = fmt.Sprintf("%s-%s-%d", result.PlayerID, result.ItemName, result.Amount)
+			execData["commandArgs"] = fmt.Sprintf("%s-%s-%d", result.PlayerID, result.ItemName, result.Amount)
 		case "Currency Conversion":
 			result := parseCurrencyConversion(timestamp, content)
 			//fmt.Println(result)
@@ -70,7 +70,7 @@ func EconomyHandler(ecoch chan string, execch chan string) {
 				continue
 			}
 			execData["command"] = result.Action
-			execData["CommandArgs"] = fmt.Sprintf("%s-%s-%d", result.PlayerID, result.ItemName, result.Amount)
+			execData["commandArgs"] = fmt.Sprintf("%s-%s-%d", result.PlayerID, result.ItemName, result.Amount)
 		case "Bank":
 			result := parseBankEvent(timestamp, content)
 			if result == nil {
@@ -78,7 +78,7 @@ func EconomyHandler(ecoch chan string, execch chan string) {
 				continue
 			}
 			execData["command"] = result.Action
-			execData["CommandArgs"] = fmt.Sprintf("%s-%s-%d", result.PlayerID, result.ItemName, result.Amount)
+			execData["commandArgs"] = fmt.Sprintf("%s-%s-%d", result.PlayerID, result.ItemName, result.Amount)
 		default:
 			//fmt.Println("[Economy-Module] Unknown category.")
 			continue

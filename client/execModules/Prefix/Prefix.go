@@ -19,16 +19,16 @@ const (
 	CommandGrant  TitleCommandType = "@给予称号" // 授予称号
 	CommandRemove TitleCommandType = "@移除称号" // 移除称号
 	CommandSet    TitleCommandType = "@设置称号" // 设置当前称号
-	CommandUnSet  TitleCommandType = "@取消称号"
+	CommandUnSet  TitleCommandType = "@隐藏称号"
 )
 
 // TitleCommand 外部模块发送过来的指令
 type TitleCommand struct {
-	UserID string
-	//UserNickname string
-	Command TitleCommandType
-	Title   string
-	Done    chan struct{}
+	UserID       string
+	UserNickname string
+	Command      TitleCommandType
+	Title        string
+	Done         chan struct{}
 }
 
 // PlayerTitle 玩家称号记录
@@ -90,39 +90,39 @@ func (m *TitleManager) listenCommands(chatChan chan string) {
 		switch cmd.Command {
 		case CommandGrant:
 			if err := m.grantTitle(cmd.UserID, cmd.Title); err != nil {
-				//chatChan <- fmt.Sprintf("授予称号失败: %v", err)
-				fmt.Println("[Error-Prefix] " + fmt.Sprintf("授予称号失败: %v", err))
+				chatChan <- fmt.Sprintf("%s授予称号失败: %v", cmd.UserNickname, err)
+				fmt.Println("[Error-Prefix] " + fmt.Sprintf("%s授予称号失败: %v", cmd.UserID, err))
 			} else {
-				//chatChan <- fmt.Sprintf("获得称号 %s", cmd.UserID, cmd.Title)
+				chatChan <- fmt.Sprintf("%s获得称号 %s", cmd.UserNickname, cmd.Title)
 				fmt.Printf("[Prefix-Module]  玩家 %s 获得称号 %s\n", cmd.UserID, cmd.Title)
 			}
 
 		case CommandRemove:
 			if err := m.removeTitle(cmd.UserID, cmd.Title); err != nil {
-				//chatChan <- fmt.Sprintf("移除称号失败: %v", err)
-				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] 移除称号失败: %v", err))
+				chatChan <- fmt.Sprintf("%s移除称号失败: %v", cmd.UserNickname, err)
+				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] %s移除称号失败: %v", cmd.UserID, err))
 			} else {
-				//chatChan <- fmt.Sprintf("玩家 %s 移除称号 %s", cmd.UserID, cmd.Title)
+				chatChan <- fmt.Sprintf("玩家 %s 移除称号 %s", cmd.UserNickname, cmd.Title)
 				fmt.Printf("[Prefix-Module] 玩家 %s 移除称号 %s\n", cmd.UserID, cmd.Title)
 			}
 
 		case CommandSet:
 			if err := m.setActiveTitle(cmd.UserID, cmd.Title); err != nil {
-				chatChan <- fmt.Sprintf("设置当前称号失败: %v", err)
+				chatChan <- fmt.Sprintf("%s设置当前称号失败: %v", cmd.UserNickname, err)
 				fmt.Printf("[Error-Prefix] 玩家 %s设置当前称号失败: %v\n", cmd.UserID, err)
 			} else {
 				p := lw.Players[cmd.UserID]
 				p.Prefix = cmd.Title
 				lw.Players[cmd.UserID] = p
 				//fmt.Println(p)
-				chatChan <- fmt.Sprintf("当前称号设为 %s", cmd.Title)
+				chatChan <- fmt.Sprintf("%s当前称号设为 %s", cmd.UserNickname, cmd.Title)
 				fmt.Printf("[Prefix-Module] 玩家 %s 当前称号设为 %s\n", cmd.UserID, cmd.Title)
 			}
 		case CommandUnSet:
 			p := lw.Players[cmd.UserID]
 			p.Prefix = ""
 			lw.Players[cmd.UserID] = p
-			chatChan <- fmt.Sprintf("当前称号已取消展示")
+			chatChan <- fmt.Sprintf("%s当前称号已取消展示", cmd.UserNickname)
 			fmt.Printf("[Prefix-Module] 玩家 %s 当前称号已取消展示\n", cmd.UserID, cmd.Title)
 		}
 		close(cmd.Done)
@@ -323,7 +323,7 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 		}
 
 		Done := make(chan struct{})
-		manager.cmdCh <- TitleCommand{UserID: commandArgs[1], Command: TitleCommandType(commandString), Title: commandArgs[0], Done: Done}
+		manager.cmdCh <- TitleCommand{UserID: commandArgs[1], UserNickname: command["nickName"].(string), Command: TitleCommandType(commandString), Title: commandArgs[0], Done: Done}
 		<-Done
 		commandLines = cfg.Data[commandString]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
