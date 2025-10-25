@@ -8,6 +8,8 @@ import (
 	"ScumBotServer/client/execModules/permissionBucket"
 	"database/sql"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -144,22 +146,41 @@ func recordSelecter(steamID string, action string, targetQuantity string, record
 	case "Kill":
 	case "Death":
 	case "purchased":
+
+		// 正则匹配 "名字 (x数量)"
+		re := regexp.MustCompile(`^(.*?)\s*\(\s*x(\d+)\s*\)$`)
+		match := re.FindStringSubmatch(targetQuantity)
+		if len(match) < 2 {
+			fmt.Errorf("[Archievement-Error]no quantity found")
+		}
+		// 规范格式
+		name := strings.TrimSpace(match[1])
+		qty, _ := strconv.Atoi(match[2])
+		// 玩家购买物品
+		recorder.RecordBehaviorDetail(steamID, action, name, qty)
 	case "sold":
+		// 匹配括号前的名字
+		re := regexp.MustCompile(`^(.*?)\s*\(`)
+		match := re.FindStringSubmatch(targetQuantity)
+		if len(match) < 2 {
+			// 没有括号，直接返回原字符串去空格
+			fmt.Errorf("[Archievement-Error]no sold Item found")
+		}
+		name := strings.TrimSpace(match[1])
+		qty := 1
+		recorder.RecordBehaviorDetail(steamID, action, name, qty)
 	case "deposit":
 	case "destroyed_card":
-
 	}
-	// 玩家购买物品
-	recorder.RecordBehaviorDetail(steamID, "Buy", "AK47 Rifle", 2)
 
 	// 玩家出售物品
-	recorder.RecordBehaviorDetail(steamID, "Sell", "Ammo 7.62mm", 30)
+	//recorder.RecordBehaviorDetail(steamID, "Sell", "Ammo 7.62mm", 30)
 
 	// 玩家击杀
-	recorder.RecordBehaviorDetail(steamID, "Kill", "Zombie", 1)
+	//recorder.RecordBehaviorDetail(steamID, "Kill", "Zombie", 1)
 
 	// 玩家死亡
-	recorder.RecordBehaviorDetail(steamID, "Death", "Explosion", 1)
+	//recorder.RecordBehaviorDetail(steamID, "Death", "Explosion", 1)
 
 	//行为记录查询
 	records, _ := recorder.GetBehaviorStats("76561198012345678")
@@ -174,7 +195,7 @@ func CommandHandler(ArchievementChan chan map[string]interface{}, cfg *execModul
 	for command := range ArchievementChan {
 		steamID := command["steamID"].(string)
 		cmdName := command["command"].(string)
-		commandArgs := strings.Split(command["commandArgs"].(string), " ")
+		commandArgs := strings.Split(command["commandArgs"].(string), "-")
 		//nick := command["nickName"].(string)
 
 		ok, msg := PMbucket.CanExecute(steamID, cmdName)

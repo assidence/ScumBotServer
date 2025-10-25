@@ -137,23 +137,46 @@ func parseMechanicTrade(ts time.Time, content string) *TradeEvent {
 
 // 货币兑换（银行兑换）
 func parseCurrencyConversion(ts time.Time, content string) *TradeEvent {
-	re := regexp.MustCompile(`Player ([^(]+)\((\d+)\) converted ([\d\.]+) (\w+) to ([\d\.]+) (\w+)`)
-	m := re.FindStringSubmatch(content)
-	if len(m) != 7 {
-		return nil
+	// 先使用原来的正则
+	oldRe := regexp.MustCompile(`Player ([^(]+)\((\d+)\) converted ([\d\.]+) (\w+) to ([\d\.]+) (\w+)`)
+	m := oldRe.FindStringSubmatch(content)
+	if len(m) == 7 {
+		fromAmt, _ := strconv.ParseFloat(m[3], 64)
+		toAmt, _ := strconv.ParseFloat(m[5], 64)
+		return &TradeEvent{
+			Timestamp: ts,
+			Type:      "Currency Conversion",
+			Action:    "convert",
+			Player:    strings.TrimSpace(m[1]),
+			PlayerID:  m[2],
+			ItemName:  fmt.Sprintf("%s→%s", m[4], m[6]),
+			Price:     fromAmt,
+			Extra:     fmt.Sprintf("%.2f→%.2f", fromAmt, toAmt),
+		}
 	}
-	fromAmt, _ := strconv.ParseFloat(m[3], 64)
-	toAmt, _ := strconv.ParseFloat(m[5], 64)
-	return &TradeEvent{
-		Timestamp: ts,
-		Type:      "Currency Conversion",
-		Action:    "convert",
-		Player:    strings.TrimSpace(m[1]),
-		PlayerID:  m[2],
-		ItemName:  fmt.Sprintf("%s→%s", m[4], m[6]),
-		Price:     fromAmt,
-		Extra:     fmt.Sprintf("%.2f→%.2f", fromAmt, toAmt),
+
+	// 如果老正则不匹配，再尝试新的purchased...for...格式
+	newRe := regexp.MustCompile(`(.+?)\(ID:(\d+)\)\(Account Number:(\d+)\) purchased (\d+) (\w+) for ([\d\.]+) (\w+)`)
+	m2 := newRe.FindStringSubmatch(content)
+	if len(m2) == 8 {
+		amount, _ := strconv.Atoi(m2[4])
+		price, _ := strconv.ParseFloat(m2[6], 64)
+		return &TradeEvent{
+			Timestamp: ts,
+			Type:      "Currency Conversion",
+			Action:    "purchase",
+			Player:    strings.TrimSpace(m2[1]),
+			PlayerID:  m2[2],
+			ItemName:  m2[5],
+			Amount:    amount,
+			Price:     price,
+			Extra:     fmt.Sprintf("Paid %s %s", m2[6], m2[7]),
+		}
 	}
+
+	// 都不匹配返回nil
+	fmt.Println("[Economy-Error] parseCurrencyConversion: no match", content)
+	return nil
 }
 
 func parseBankEvent(ts time.Time, content string) *TradeEvent {
