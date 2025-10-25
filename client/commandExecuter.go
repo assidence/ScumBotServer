@@ -3,6 +3,7 @@ package main
 import (
 	"ScumBotServer/client/execModules"
 	"ScumBotServer/client/execModules/Announcer"
+	"ScumBotServer/client/execModules/Archievement"
 	"ScumBotServer/client/execModules/DidiCar"
 	"ScumBotServer/client/execModules/Kits"
 	"ScumBotServer/client/execModules/LogWacher"
@@ -20,6 +21,8 @@ var ScheduleTaskChan = make(chan map[string]interface{}, 100)
 var PrefixChan = make(chan map[string]interface{}, 100)
 
 var AnnouncerChan = make(chan map[string]interface{}, 100)
+
+var AchievementChan = make(chan map[string]interface{}, 100)
 
 var chatChan = make(chan string, 100)
 
@@ -51,6 +54,11 @@ func moduleInit(regCommand *map[string][]string) {
 	TitleManager = <-PrefixTitleManagerChan
 	<-initChan
 	fmt.Println("[Module] 称号模组已加载")
+
+	initChan = make(chan struct{})
+	go Achievement.AchievementModule(regCommand, AchievementChan, chatChan, lw, TitleManager, initChan)
+	<-initChan
+	fmt.Println("[Module] 成就模组已加载")
 
 	initChan = make(chan struct{})
 	go Kits.Kits(regCommand, KitsChan, chatChan, lw, TitleManager, initChan)
@@ -88,6 +96,7 @@ func commandSelecter(command map[string]interface{}, regCommand *map[string][]st
 		//moduleName = moduleName
 		//fmt.Printf("%s::%s\n", moduleName, moduleCommands)
 		commandMap := listToMap(moduleCommands)
+		//fmt.Println(moduleName, moduleCommands)
 		if _, ok := commandMap[command["command"].(string)]; ok {
 			switch moduleName {
 			case "Kits":
@@ -104,6 +113,9 @@ func commandSelecter(command map[string]interface{}, regCommand *map[string][]st
 				return
 			case "Announcer":
 				AnnouncerChan <- command
+				return
+			case "Achievement":
+				AchievementChan <- command
 				return
 			}
 		}

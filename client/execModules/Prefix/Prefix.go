@@ -41,7 +41,7 @@ type PlayerTitle struct {
 // TitleManager 核心管理器
 type TitleManager struct {
 	db     *sql.DB
-	cmdCh  chan TitleCommand
+	CmdCh  chan TitleCommand
 	mu     sync.Mutex
 	wg     sync.WaitGroup
 	closed bool
@@ -56,7 +56,7 @@ func NewTitleManager(dbPath string, chatChan chan string) (*TitleManager, error)
 
 	manager := &TitleManager{
 		db:    db,
-		cmdCh: make(chan TitleCommand, 64),
+		CmdCh: make(chan TitleCommand, 64),
 	}
 
 	if err := manager.initDB(); err != nil {
@@ -86,7 +86,7 @@ func (m *TitleManager) initDB() error {
 // 监听来自其他模块的指令
 func (m *TitleManager) listenCommands(chatChan chan string) {
 	defer m.wg.Done()
-	for cmd := range m.cmdCh {
+	for cmd := range m.CmdCh {
 		switch cmd.Command {
 		case CommandGrant:
 			if err := m.grantTitle(cmd.UserID, cmd.Title); err != nil {
@@ -211,7 +211,7 @@ func (m *TitleManager) GetActiveTitle(userID string) (string, error) {
 
 // CommandChan 返回供外部发送指令的通道
 func (m *TitleManager) CommandChan() chan<- TitleCommand {
-	return m.cmdCh
+	return m.CmdCh
 }
 
 // Close 关闭模块
@@ -219,7 +219,7 @@ func (m *TitleManager) Close() {
 	if m.closed {
 		return
 	}
-	close(m.cmdCh)
+	close(m.CmdCh)
 	m.wg.Wait()
 	m.db.Close()
 	m.closed = true
@@ -323,7 +323,7 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 		}
 
 		Done := make(chan struct{})
-		manager.cmdCh <- TitleCommand{UserID: commandArgs[1], UserNickname: command["nickName"].(string), Command: TitleCommandType(commandString), Title: commandArgs[0], Done: Done}
+		manager.CmdCh <- TitleCommand{UserID: commandArgs[1], UserNickname: command["nickName"].(string), Command: TitleCommandType(commandString), Title: commandArgs[0], Done: Done}
 		<-Done
 		commandLines = cfg.Data[commandString]["Command"].([]string)
 		for _, cfgCommand := range commandLines {

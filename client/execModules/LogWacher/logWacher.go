@@ -120,8 +120,9 @@ func (lw *LogWatcher) parseBlock(block []string) {
 		if r.BlockStart.MatchString(text) && r.Pattern.MatchString(text) {
 			// 找出文本里所有匹配的玩家
 			matches := r.Pattern.FindAllStringSubmatch(text, -1)
+			tempPlayers := make(map[string]Player)
 			for _, match := range matches {
-				if len(match) == 9 { // 第0项是完整匹配，后面是捕获组
+				if len(match) == 9 { //第0项是完整匹配 后面是捕获组
 					player := Player{
 						Name:           match[1],
 						SteamID:        match[2],
@@ -132,17 +133,16 @@ func (lw *LogWatcher) parseBlock(block []string) {
 						LocationY:      match[7],
 						LocationZ:      match[8],
 					}
-					lw.mu.Lock()
-					lw.Players[player.SteamID] = player
-					lw.mu.Unlock()
-					//fmt.Println("[LogWatcher] 捕获玩家信息:", player.Name, player.SteamID)
-					//fmt.Printf("%s:%s %s %s\n", player.Name, player.LocationX, player.LocationY, player.LocationZ)
+					tempPlayers[player.SteamID] = player
 				}
 				if len(match) == 3 {
 					lw.Vehicles[match[1]] = append(lw.Vehicles[match[1]], match[2])
 					fmt.Println("[LogWatcher] 捕获载具生成：", match[1], match[2])
 				}
 			}
+			lw.mu.Lock()
+			lw.Players = tempPlayers
+			lw.mu.Unlock()
 		}
 	}
 }
