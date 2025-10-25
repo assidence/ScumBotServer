@@ -288,6 +288,7 @@ func recordSelecter(steamID string, action string, targetQuantity string, record
 	case "purchased":
 		re := regexp.MustCompile(`^(.*?)\s*\(\s*x(\d+)\s*\)$`)
 		match := re.FindStringSubmatch(targetQuantity)
+		fmt.Println(targetQuantity)
 		if len(match) >= 3 {
 			name := strings.TrimSpace(match[1])
 			qty, _ := strconv.Atoi(match[2])
