@@ -51,8 +51,10 @@ func EconomyHandler(ecoch chan string, execch chan string) {
 				fmt.Println("[Economy-Error] No Trade event：", content)
 				continue
 			}
+			//fmt.Println("Amount:", result.Amount)
 			execData["command"] = result.Action
 			execData["commandArgs"] = fmt.Sprintf("%s-%s-%d", result.PlayerID, result.ItemName, result.Amount)
+			//fmt.Printf("%s-%s-%d\n", result.PlayerID, result.ItemName, result.Amount)
 		case "Trade-Mechanic":
 			result := parseMechanicTrade(timestamp, content)
 			//fmt.Println(result)
@@ -93,24 +95,38 @@ func EconomyHandler(ecoch chan string, execch chan string) {
 
 // 处理普通交易（购买/出售）
 func parseClassicTrade(ts time.Time, content string) *TradeEvent {
-	re := regexp.MustCompile(`Tradeable \((.+?)\) (purchased|sold) by ([^(]+)\((\d+)\) for ([\d\.]+)(?: \([^)]*worth of contained items\))?(?: money)? (?:from|to) trader (\S+)`)
+	// 捕获购买或出售日志
+	// 购买日志可能有 (x数量)
+	// 出售日志可能有 (health:..., uses:...)，数量默认为1
+	re := regexp.MustCompile(`Tradeable \(([^()]+?)(?: \(x(\d+)\)| \([^)]+\))\) (purchased|sold) by ([^(]+)\((\d+)\) for ([\d\.]+)(?: \([^)]*worth of contained items\))?(?: money)? (?:from|to) trader (\S+)`)
 	m := re.FindStringSubmatch(content)
-	if len(m) != 7 {
+	if len(m) != 8 {
 		fmt.Println("[Economy-Error] parseClassicTrade: insufficient match:", content)
 		return nil
 	}
 
-	price, _ := strconv.ParseFloat(m[5], 64)
+	itemName := strings.ReplaceAll(strings.TrimSpace(m[1]), "-", "_")
+
+	// 判断数量
+	amount := 1
+	if m[3] == "purchased" && m[2] != "" {
+		// 购买日志，有明确数量时才解析
+		amount, _ = strconv.Atoi(m[2])
+	}
+	// 出售日志或购买日志没有数量，默认1
+
+	price, _ := strconv.ParseFloat(m[6], 64)
 
 	return &TradeEvent{
 		Timestamp: ts,
 		Type:      "Trade",
-		Action:    m[2],
-		Player:    strings.TrimSpace(m[3]),
-		PlayerID:  m[4],
-		ItemName:  strings.ReplaceAll(m[1], "-", "_"),
+		Action:    m[3],
+		Player:    strings.TrimSpace(m[4]),
+		PlayerID:  m[5],
+		ItemName:  itemName,
+		Amount:    amount,
 		Price:     price,
-		Trader:    m[6],
+		Trader:    m[7],
 	}
 }
 
@@ -146,7 +162,7 @@ func parseCurrencyConversion(ts time.Time, content string) *TradeEvent {
 		return &TradeEvent{
 			Timestamp: ts,
 			Type:      "Currency Conversion",
-			Action:    "convert",
+			Action:    "converted",
 			Player:    strings.TrimSpace(m[1]),
 			PlayerID:  m[2],
 			ItemName:  fmt.Sprintf("%s→%s", m[4], m[6]),
@@ -164,7 +180,7 @@ func parseCurrencyConversion(ts time.Time, content string) *TradeEvent {
 		return &TradeEvent{
 			Timestamp: ts,
 			Type:      "Currency Conversion",
-			Action:    "purchase",
+			Action:    "purchased",
 			Player:    strings.TrimSpace(m2[1]),
 			PlayerID:  m2[2],
 			ItemName:  m2[5],

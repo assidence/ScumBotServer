@@ -11,7 +11,6 @@ import (
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -260,7 +259,7 @@ func (r *BehaviorRecorder) unlockAchievement(steamID string, achv Achievement, c
 	}
 
 	for _, cmd := range achv.RewardCommandLines {
-		fmt.Println("cmd:", cmd)
+		//fmt.Println("cmd:", cmd)
 		cfglines := CommandSelecter.Selecter(steamID, cmd, lw)
 		for _, lines := range cfglines {
 			chatChan <- lines
@@ -281,27 +280,14 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 }
 
 // 分流行为记录器
-func recordSelecter(steamID string, action string, targetQuantity string, recorder *BehaviorRecorder, achv []Achievement, chatChan chan string, titleMgr *Prefix.TitleManager) {
+func recordSelecter(steamID string, action string, target string, targetQuantity int, recorder *BehaviorRecorder, achv []Achievement, chatChan chan string, titleMgr *Prefix.TitleManager) {
 	switch action {
 	case "Kill", "Death":
 		//recorder.RecordBehaviorDetail(steamID, action, "", 1)
 	case "purchased":
-		re := regexp.MustCompile(`^(.*?)\s*\(\s*x(\d+)\s*\)$`)
-		match := re.FindStringSubmatch(targetQuantity)
-		fmt.Println(targetQuantity)
-		if len(match) >= 3 {
-			name := strings.TrimSpace(match[1])
-			qty, _ := strconv.Atoi(match[2])
-			recorder.RecordBehaviorDetail(steamID, action, name, qty)
-		}
+		recorder.RecordBehaviorDetail(steamID, action, target, targetQuantity)
 	case "sold":
-		re := regexp.MustCompile(`^(.*?)\s*\(`)
-		match := re.FindStringSubmatch(targetQuantity)
-		name := ""
-		if len(match) >= 2 {
-			name = strings.TrimSpace(match[1])
-		}
-		recorder.RecordBehaviorDetail(steamID, action, name, 1)
+		recorder.RecordBehaviorDetail(steamID, action, target, targetQuantity)
 	}
 
 	recorder.CheckAchievements(steamID, achv, chatChan, titleMgr)
@@ -321,7 +307,10 @@ func CommandHandler(AchievementChan chan map[string]interface{}, cfg *execModule
 			continue
 		}
 
-		recordSelecter(commandArgs[0], cmdName, commandArgs[1], recorder, achv, chatChan, titleMgr)
+		amount, _ := strconv.Atoi(commandArgs[2])
+		//fmt.Println("amount:", amount)
+
+		recordSelecter(commandArgs[0], cmdName, commandArgs[1], amount, recorder, achv, chatChan, titleMgr)
 
 		commandLines = cfg.Data[cmdName]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
