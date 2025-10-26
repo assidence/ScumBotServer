@@ -1,0 +1,226 @@
+//go:build windows
+
+package execModules
+
+import (
+	"fmt"
+	"image"
+	"log"
+	"syscall"
+	"time"
+	"unsafe"
+)
+
+var (
+	user32                     = syscall.NewLazyDLL("user32.dll")
+	gdi32                      = syscall.NewLazyDLL("gdi32.dll")
+	procFindWindowW            = user32.NewProc("FindWindowW")
+	procSetForeground          = user32.NewProc("SetForegroundWindow")
+	procMoveWindow             = user32.NewProc("MoveWindow")
+	procGetClientRect          = user32.NewProc("GetClientRect")
+	procGetDC                  = user32.NewProc("GetDC")
+	procReleaseDC              = user32.NewProc("ReleaseDC")
+	procCreateCompatibleDC     = gdi32.NewProc("CreateCompatibleDC")
+	procCreateCompatibleBitmap = gdi32.NewProc("CreateCompatibleBitmap")
+	procSelectObject           = gdi32.NewProc("SelectObject")
+	procBitBlt                 = gdi32.NewProc("BitBlt")
+	procDeleteDC               = gdi32.NewProc("DeleteDC")
+	procDeleteObject           = gdi32.NewProc("DeleteObject")
+	procGetDIBits              = gdi32.NewProc("GetDIBits")
+	procSendInput              = user32.NewProc("SendInput")
+)
+
+type RECT struct{ Left, Top, Right, Bottom int32 }
+
+type BITMAPINFOHEADER struct {
+	Size          uint32
+	Width         int32
+	Height        int32
+	Planes        uint16
+	BitCount      uint16
+	Compression   uint32
+	SizeImage     uint32
+	XPelsPerMeter int32
+	YPelsPerMeter int32
+	ClrUsed       uint32
+	ClrImportant  uint32
+}
+
+// -------------------- 窗口操作 --------------------
+func utf16Ptr(s string) *uint16 {
+	ptr, _ := syscall.UTF16PtrFromString(s)
+	return ptr
+}
+
+func findWindow(title string) (uintptr, error) {
+	hwnd, _, _ := procFindWindowW.Call(0, uintptr(unsafe.Pointer(utf16Ptr(title))))
+	if hwnd == 0 {
+		return 0, fmt.Errorf("未找到窗口: %s", title)
+	}
+	return hwnd, nil
+}
+
+func setForeground(hwnd uintptr) {
+	procSetForeground.Call(hwnd)
+}
+
+func moveWindow(hwnd uintptr, x, y, w, h int) {
+	procMoveWindow.Call(hwnd, uintptr(x), uintptr(y), uintptr(w), uintptr(h), 1)
+}
+
+func getClientRect(hwnd uintptr) (RECT, error) {
+	var rect RECT
+	ret, _, _ := procGetClientRect.Call(hwnd, uintptr(unsafe.Pointer(&rect)))
+	if ret == 0 {
+		return rect, fmt.Errorf("GetClientRect 失败")
+	}
+	return rect, nil
+}
+
+// -------------------- 全屏截图 --------------------
+func captureWindow(hwnd uintptr) (*image.RGBA, error) {
+	rect, err := getClientRect(hwnd)
+	if err != nil {
+		return nil, err
+	}
+	width := int(rect.Right - rect.Left)
+	height := int(rect.Bottom - rect.Top)
+	if width <= 0 || height <= 0 {
+		return nil, fmt.Errorf("窗口无效大小")
+	}
+
+	hDC, _, _ := procGetDC.Call(hwnd)
+	if hDC == 0 {
+		return nil, fmt.Errorf("GetDC 失败")
+	}
+	defer procReleaseDC.Call(hwnd, hDC)
+
+	memDC, _, _ := procCreateCompatibleDC.Call(hDC)
+	defer procDeleteDC.Call(memDC)
+
+	hBmp, _, _ := procCreateCompatibleBitmap.Call(hDC, uintptr(width), uintptr(height))
+	defer procDeleteObject.Call(hBmp)
+
+	procSelectObject.Call(memDC, hBmp)
+	procBitBlt.Call(memDC, 0, 0, uintptr(width), uintptr(height), hDC, 0, 0, 0x00CC0020)
+
+	bi := BITMAPINFOHEADER{
+		Size:     uint32(unsafe.Sizeof(BITMAPINFOHEADER{})),
+		Width:    int32(width),
+		Height:   -int32(height),
+		Planes:   1,
+		BitCount: 32,
+	}
+
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	procGetDIBits.Call(memDC, hBmp, 0, uintptr(height),
+		uintptr(unsafe.Pointer(&img.Pix[0])),
+		uintptr(unsafe.Pointer(&bi)), 0)
+
+	return img, nil
+}
+
+// -------------------- 键盘输入 --------------------
+func keyTap(scanCode uint16) {
+	var inputs [2]struct {
+		Type uint32
+		Ki   struct {
+			WVk         uint16
+			WScan       uint16
+			DwFlags     uint32
+			Time        uint32
+			DwExtraInfo uintptr
+		}
+	}
+
+	// 按下
+	inputs[0].Type = 1
+	inputs[0].Ki.WVk = 0
+	inputs[0].Ki.WScan = scanCode
+	inputs[0].Ki.DwFlags = 0x0008 // KEYEVENTF_SCANCODE
+
+	// 松开
+	inputs[1].Type = 1
+	inputs[1].Ki.WVk = 0
+	inputs[1].Ki.WScan = scanCode
+	inputs[1].Ki.DwFlags = 0x0008 | 0x0002 // KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP
+
+	procSendInput.Call(
+		uintptr(len(inputs)),
+		uintptr(unsafe.Pointer(&inputs[0])),
+		unsafe.Sizeof(inputs[0]),
+	)
+}
+
+func clickAt(x, y int) {
+	// 暂时使用打印位置，实际可加鼠标移动 + 点击
+	fmt.Printf("点击位置: %d,%d\n", x, y)
+}
+
+// -------------------- 判断区域是否“亮色” --------------------
+func isBrightArea(img *image.RGBA, rect image.Rectangle, threshold float64) bool {
+	var rSum, gSum, bSum int64
+	for y := rect.Min.Y; y < rect.Max.Y; y++ {
+		for x := rect.Min.X; x < rect.Max.X; x++ {
+			r, g, b, _ := img.At(x, y).RGBA()
+			rSum += int64(r >> 8)
+			gSum += int64(g >> 8)
+			bSum += int64(b >> 8)
+		}
+	}
+	total := int64(rect.Dx() * rect.Dy())
+	rAvg := float64(rSum) / float64(total)
+	gAvg := float64(gSum) / float64(total)
+	bAvg := float64(bSum) / float64(total)
+
+	return rAvg+gAvg+bAvg > threshold
+}
+
+// -------------------- 主逻辑 --------------------
+func AutoReConnect() {
+	title := "SCUM  "
+
+	hwnd, err := findWindow(title)
+	if err != nil {
+		log.Println("未找到窗口")
+		return
+	}
+	log.Printf("找到窗口句柄: 0x%x", hwnd)
+
+	moveWindow(hwnd, 0, 0, 1280, 720)
+	setForeground(hwnd)
+
+	// 按钮坐标偏移（相对于窗口左上角）
+	okBtnPos := image.Pt(640, 360)       // 中心位置示例
+	continueBtnPos := image.Pt(640, 400) // 示例位置
+
+	// 聊天框区域示例
+	chatRect := image.Rect(30, 30, 330, 180)
+
+	for {
+		img, err := captureWindow(hwnd)
+		if err != nil {
+			log.Println("截图失败:", err)
+			time.Sleep(time.Second)
+			continue
+		}
+
+		// 简单颜色判断点击 OK / Continue
+		if !isBrightArea(img, image.Rect(okBtnPos.X-20, okBtnPos.Y-10, okBtnPos.X+20, okBtnPos.Y+10), 100) {
+			log.Println("点击 OK 按钮")
+			clickAt(okBtnPos.X, okBtnPos.Y)
+		}
+		if !isBrightArea(img, image.Rect(continueBtnPos.X-20, continueBtnPos.Y-10, continueBtnPos.X+20, continueBtnPos.Y+10), 100) {
+			log.Println("点击 Continue 按钮")
+			clickAt(continueBtnPos.X, continueBtnPos.Y)
+		}
+
+		// 检查聊天框
+		if !isBrightArea(img, chatRect, 30) {
+			log.Println("聊天框未打开 → 按 T")
+			keyTap(0x14) // T 扫描码
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+}
