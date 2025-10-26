@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ScumBotServer/client/execModules"
 	"bufio"
 	"fmt"
 	"net"
@@ -21,7 +22,7 @@ func main() {
 	var execCommand = make(chan map[string]interface{})
 	re := regexp.MustCompile(`\{[^}]*\}`)
 	go commandExecuter(execCommand)
-	//go execModules.FocusWindows("SCUM  ")
+	go execModules.FocusWindows("SCUM  ")
 	for {
 		NetworkSignal := make(chan struct{})
 		conn := HttpClient(address)

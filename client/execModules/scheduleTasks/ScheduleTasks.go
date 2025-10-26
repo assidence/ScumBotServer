@@ -96,7 +96,7 @@ func IntervalTask(intervalStr string, com string, ScheduleTasksChan chan map[str
 		for {
 			select {
 			case <-ticker.C:
-				fmt.Printf("[ScheduleTasks-Module] %s:间隔任务已执行 (every %s)\n", com, duration)
+				//fmt.Printf("[ScheduleTasks-Module] %s:间隔任务已执行 (every %s)\n", com, duration)
 				TaskFunction(com, ScheduleTasksChan)
 			case <-quit:
 				fmt.Printf("[ScheduleTasks-Module] %s:间隔任务已停止\n", com)

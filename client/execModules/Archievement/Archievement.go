@@ -251,10 +251,10 @@ func (r *BehaviorRecorder) unlockAchievement(steamID string, achv Achievement, c
 	if achv.RewardTitle != "" && titleMgr != nil {
 		Done := make(chan struct{})
 		//fmt.Println("lw.Players[steamID].Name:", lw.Players[steamID].Name)
-		titleMgr.CmdCh <- Prefix.TitleCommand{UserID: steamID, UserNickname: lw.Players[steamID].Name, Command: Prefix.TitleCommandType("@给予称号"), Title: achv.RewardTitle, Done: Done}
+		titleMgr.CmdCh <- Prefix.TitleCommand{UserID: steamID, Command: Prefix.TitleCommandType("@给予称号"), Title: achv.RewardTitle, Done: Done}
 		<-Done
 		Done = make(chan struct{})
-		titleMgr.CmdCh <- Prefix.TitleCommand{UserID: steamID, UserNickname: lw.Players[steamID].Name, Command: Prefix.TitleCommandType("@设置称号"), Title: achv.RewardTitle, Done: Done}
+		titleMgr.CmdCh <- Prefix.TitleCommand{UserID: steamID, Command: Prefix.TitleCommandType("@设置称号"), Title: achv.RewardTitle, Done: Done}
 		<-Done
 	}
 

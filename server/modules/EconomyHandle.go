@@ -214,6 +214,7 @@ func parseBankEvent(ts time.Time, content string) *TradeEvent {
 	}
 
 	// 解析 destroyed card
+	amount := 1
 	cardRe := regexp.MustCompile(`(.+?)\(ID:(\d+)\)\(Account Number:(\d+)\) manually destroyed (.+) belonging to Account Number:(\d+).+`)
 	m2 := cardRe.FindStringSubmatch(content)
 	if len(m2) == 6 {
@@ -223,6 +224,7 @@ func parseBankEvent(ts time.Time, content string) *TradeEvent {
 			Action:    "destroyed_card",
 			Player:    strings.TrimSpace(m2[1]),
 			PlayerID:  m2[2],
+			Amount:    amount,
 			ItemName:  strings.ReplaceAll(m2[4], "-", "_"),
 			Extra:     fmt.Sprintf("Account Number:%s", m2[5]),
 		}
