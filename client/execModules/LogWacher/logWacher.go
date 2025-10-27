@@ -142,7 +142,7 @@ func (lw *LogWatcher) parseBlock(block []string) {
 						LocationZ:      match[8],
 					}
 					tempPlayers[player.SteamID] = player
-					fmt.Println("[LogWatcher] 捕获玩家：", match[1])
+					//fmt.Println("[LogWatcher] 捕获玩家：", match[1])
 				}
 				if len(match) == 3 {
 					lw.Vehicles[match[1]] = append(lw.Vehicles[match[1]], match[2])

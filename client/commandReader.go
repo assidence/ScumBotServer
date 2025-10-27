@@ -35,16 +35,23 @@ func commandReader(re *regexp.Regexp, conn net.Conn, execCommand chan map[string
 			close(networkSignal)
 			return
 		}
-		match := re.FindString(line)
+		//match := re.FindString(line)
 		var msg map[string]interface{}
-		err = json.Unmarshal([]byte(match), &msg)
+		err = json.Unmarshal([]byte(line), &msg)
 		if err != nil {
 			//fmt.Println(line)
-			fmt.Println(line)
+			//fmt.Println("[CommandReader] Unmarshal Error:", line, "  Error:", err)
 			continue
 		}
 		//fmt.Println("[Info] msg[" + msg["command"].(string) + "]")
-
-		execCommand <- msg
+		var command map[string]interface{}
+		//fmt.Println("msg From is:", msg["from"])
+		switch msg["from"].(string) {
+		case "Broadcaster":
+			err = json.Unmarshal([]byte(msg["content"].(string)), &command)
+		default:
+			continue
+		}
+		execCommand <- command
 	}
 }
