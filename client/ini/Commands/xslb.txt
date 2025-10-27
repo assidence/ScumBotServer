@@ -14,4 +14,4 @@ SpawnItem MilitaryPants_03 1 Location %s
 SpawnItem Bulletproof_Vest_01_05 1 Location %s
 SpawnItem Combat_Helmet_01 1 Location %s
 SpawnItem 2H_Tang_Dao 1 Location %s
-SpawnVehicle BPC_Laika 1 Location "X=%s Y=%s Z=%s" Modifier Full
+SpawnVehicle BPC_Laika 1 Location "X=%s Y=%s Z=%s"

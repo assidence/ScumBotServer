@@ -7,7 +7,6 @@ import (
 	"ScumBotServer/client/execModules/permissionBucket"
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -50,8 +49,7 @@ func createPermissionBucket() *permissionBucket.Manager {
 	return pm
 }
 
-// CommandRegister: 注册模块提供的命令到 regCommand 映射
-// 与其它模块保持一致：将所有 ini section 名称作为命令条目
+// CommandRegister 注册模块提供的命令到 regCommand 映射 与其它模块保持一致：将所有 ini section 名称作为命令条目
 func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	var commandList []string
 	for section, _ := range cfg.Data {
@@ -64,19 +62,14 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	(*regCommand)["CheckIn"] = commandList
 }
 
-// CommandHandler: 与项目其它模块风格保持一致
-// 从 CheckInChan 接收 map[string]interface{}，字段预期： steamID, nickName, command, action
+// CommandHandler 与项目其它模块风格保持一致 从 CheckInChan 接收 map[string]interface{}，字段预期： steamID, nickName, command, action
 func CommandHandler(CheckInChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, lw *LogWacher.LogWatcher) {
 	for command := range CheckInChan {
 		nick := fmt.Sprint(command["nickName"])
-		chatChan <- fmt.Sprintf("%s 签到处理中 请耐心等待", nick)
-
 		steamID := fmt.Sprint(command["steamID"])
 		cmdName := fmt.Sprint(command["command"])
-		action := ""
-		if a, ok := command["action"]; ok && a != nil {
-			action = strings.ToLower(fmt.Sprint(a))
-		}
+
+		chatChan <- fmt.Sprintf("%s 签到处理中 请耐心等待", nick)
 
 		// 权限检查（使用 ini 中的 Command 名称作为权限 key）
 		ok, msg := PMbucket.CanExecute(steamID, cmdName)
@@ -86,13 +79,8 @@ func CommandHandler(CheckInChan chan map[string]interface{}, cfg *execModules.Co
 			continue
 		}
 
-		// 默认兼容：如果未指定 action，但 command 就是签到的 section 名，认为是 sign
-		if action == "" {
-			action = "sign"
-		}
-
-		switch action {
-		case "sign":
+		switch cmdName {
+		case "@签到":
 			resp, err := handleSign(steamID, nick, cfg, chatChan, lw)
 			if err != nil {
 				fmt.Println("[CheckIn-Module] sign error:", err)
@@ -100,7 +88,7 @@ func CommandHandler(CheckInChan chan map[string]interface{}, cfg *execModules.Co
 				continue
 			}
 			chatChan <- resp
-		case "query":
+		case "@查询":
 			resp, err := handleQuery(steamID, nick)
 			if err != nil {
 				fmt.Println("[CheckIn-Module] query error:", err)
@@ -109,7 +97,7 @@ func CommandHandler(CheckInChan chan map[string]interface{}, cfg *execModules.Co
 			}
 			chatChan <- resp
 		default:
-			chatChan <- fmt.Sprintf("未知操作: %s", action)
+			chatChan <- fmt.Sprintf("未知的签到操作: %s", cmdName)
 		}
 	}
 	defer PMbucket.Close()
@@ -177,80 +165,6 @@ func handleQuery(steamID, nick string) (string, error) {
 	return fmt.Sprintf("%s 上次签到：%s，连续签到：%d 天，总签到：%d 次。", nick, lastDate, streak, total), nil
 }
 
-/*
-// sendRewardsFromCfg: 从 cfg（ini）中寻找对应 section 的 Command 字段并执行
-// 这里的 sectionName 为 ini 中的节名（例如: "@签到" 或 "签到"）
-// 为了兼容现有模块，我们尝试多种 key：1) 完整 section 名 2) 去掉 @ 前缀后的名字
-func sendRewardsFromCfg(sectionName, steamID string, chatChan chan string, lw *LogWacher.LogWatcher, cfg *execModules.Config) {
-	if cfg == nil {
-		return
-	}
-
-	// 直接尝试以 sectionName 查找
-	tryKeys := []string{sectionName}
-	// 如果 sectionName 没有 @ 前缀，也加上 @ 形式尝试
-	if !strings.HasPrefix(sectionName, "@") {
-		tryKeys = append(tryKeys, "@"+sectionName)
-	}
-	// 另外也遍历所有配置项，找一个包含“签到”或 sectionName 的条目（兼容性）
-tryLoop:
-	for _, key := range tryKeys {
-		if sec, ok := cfg.Data[key]; ok {
-			if cmdListIface, ok2 := sec["Command"]; ok2 && cmdListIface != nil {
-				// cfg.Data[section]["Command"] 在 iniLoader 已经被读成 []string（如果配置了文件）
-				switch v := cmdListIface.(type) {
-				case []string:
-					for _, tpl := range v {
-						// 可能的模板替换：{steamID}
-						line := strings.ReplaceAll(tpl, "{steamID}", steamID)
-						// 使用 CommandSelecter 解析成最终需要发送的行
-						lines := CommandSelecter.Selecter(steamID, line, lw)
-						for _, l := range lines {
-							chatChan <- l
-						}
-					}
-				case string:
-					line := strings.ReplaceAll(v, "{steamID}", steamID)
-					lines := CommandSelecter.Selecter(steamID, line, lw)
-					for _, l := range lines {
-						chatChan <- l
-					}
-				}
-			}
-			// 找到就返回
-			return
-		}
-	}
-
-	// 作为兜底：查找任意含有关键词的 section
-	for key, sec := range cfg.Data {
-		if strings.Contains(strings.ToLower(key), strings.ToLower(sectionName)) || strings.Contains(strings.ToLower(key), "签到") {
-			if cmdListIface, ok2 := sec["Command"]; ok2 && cmdListIface != nil {
-				switch v := cmdListIface.(type) {
-				case []string:
-					for _, tpl := range v {
-						line := strings.ReplaceAll(tpl, "{steamID}", steamID)
-						lines := CommandSelecter.Selecter(steamID, line, lw)
-						for _, l := range lines {
-							chatChan <- l
-						}
-					}
-				case string:
-					line := strings.ReplaceAll(v, "{steamID}", steamID)
-					lines := CommandSelecter.Selecter(steamID, line, lw)
-					for _, l := range lines {
-						chatChan <- l
-					}
-				}
-			}
-			return
-		}
-	}
-}
-*/
-// Module 启动入口（与其他模块保持签名一致）
-// regCommand: 全局命令注册表（模块应把其 ini 中的每个 section 名注册进去）
-// CheckInChan: 模块接收命令通道
 func CheckInModule(regCommand *map[string][]string, CheckInChan chan map[string]interface{}, chatChan chan string, lw *LogWacher.LogWatcher, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
 	// 1. 读取 ini
 	cfg := iniLoader()

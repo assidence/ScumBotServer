@@ -116,7 +116,7 @@ func (m *TitleManager) listenCommands(chatChan chan string) {
 				//fmt.Println(p)
 				line := fmt.Sprintf("#SetFakeName %s -★%s★-%s", cmd.UserID, cmd.Title, p.Name)
 				chatChan <- line
-				chatChan <- fmt.Sprintf("%s当前称号设为 %s", p.Name, cmd.Title)
+				chatChan <- fmt.Sprintf("%s当前称号设为 %s 可使用@隐藏称号 来取消", p.Name, cmd.Title)
 				fmt.Println("[Prefix-Module]:" + line)
 				//fmt.Printf("[Prefix-Module] 玩家 %s 当前称号设为 %s\n", cmd.UserID, cmd.Title)
 			}
@@ -295,7 +295,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Config, chatChan chan string, lw *LogWacher.LogWatcher) {
 	var commandLines []string
 	for command := range PrefixChan {
-		chatChan <- fmt.Sprintf("%s 称号命令执行中 请耐心等待", command["nickName"].(string))
+		//chatChan <- fmt.Sprintf("%s 称号命令执行中 请耐心等待", command["nickName"].(string))
 		//fmt.Println(command["command"].(string))
 		//fmt.Println(cfg.Data)
 		//fmt.Println(cfg.Data[command["command"].(string)]["Command"])
@@ -339,7 +339,7 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 			}
 		}
 
-		chatChan <- fmt.Sprintf("%s 已执行称号命令", command["nickName"].(string))
+		//chatChan <- fmt.Sprintf("%s 已执行称号命令", command["nickName"].(string))
 	}
 	//defer PMbucket.Close()
 }

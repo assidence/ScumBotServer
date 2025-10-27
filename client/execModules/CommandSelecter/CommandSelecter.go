@@ -41,6 +41,8 @@ func Selecter(steamID string, cfgCommand string, lw *LogWacher.LogWatcher) []str
 			nickName = lw.Players[steamID].Name
 		}
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID, nickName))
+	case "Teleport":
+		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID))
 	default:
 		//fmt.Println("[ERROR-CommandSelecter]->Error:无法匹配命令 ", cmd)
 		cfgChat = append(cfgChat, cmd)

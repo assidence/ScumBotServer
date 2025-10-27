@@ -2,6 +2,7 @@ package main
 
 import (
 	modules2 "ScumBotServer/server/modules"
+	"ScumBotServer/server/modules/DBwatcher"
 	IMServer2 "ScumBotServer/server/modules/IMServer"
 	Utf16tail "ScumBotServer/server/modules/tail"
 	"fmt"
@@ -86,6 +87,9 @@ func main() {
 	//reg = `^(\d{4}\.\d{2}\.\d{2}-\d{2}\.\d{2}\.\d{2}): '([\d\.]+) (\d+):([^()']+)\((\d+)\)' logged (in|out) at: X=([-\d\.]+) Y=([-\d\.]+) Z=([-\d\.]+)(?: \(as drone\))?$`
 	go EconomyCommandSender(EconomyCommand, ecoch)
 	go modules2.EconomyHandler(ecoch, execch)
+
+	//数据库监控
+	go DBwatcher.Start(execch)
 
 	select {}
 }
