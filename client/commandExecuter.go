@@ -8,6 +8,7 @@ import (
 	"ScumBotServer/client/execModules/Kits"
 	"ScumBotServer/client/execModules/LogWacher"
 	"ScumBotServer/client/execModules/Prefix"
+	"ScumBotServer/client/execModules/StatusMonitor"
 	"ScumBotServer/client/execModules/scheduleTasks"
 	"fmt"
 )
@@ -35,7 +36,7 @@ var lw = &LogWacher.LogWatcher{
 var TitleManager *Prefix.TitleManager
 
 // moduleInit initiation the command function module
-func moduleInit(regCommand *map[string][]string) {
+func moduleInit(regCommand *map[string][]string, sendChannel chan []byte) {
 	var initChan = make(chan struct{})
 	go commandSendToChat(initChan)
 	<-initChan
@@ -79,6 +80,12 @@ func moduleInit(regCommand *map[string][]string) {
 	go Announcer.Announcer(regCommand, AnnouncerChan, chatChan, lw, TitleManager, initChan)
 	<-initChan
 	fmt.Println("[Module] 广播模组已加载")
+
+	//======================================================================================
+	initChan = make(chan struct{})
+	go StatusMonitor.StatusMonitor(sendChannel, lw, TitleManager, initChan)
+	<-initChan
+	fmt.Println("[Module] 状态网络广播模组已加载")
 
 }
 
@@ -135,11 +142,11 @@ func commandSendToChat(iniChan chan struct{}) {
 }
 
 // commandExecuter aka commandExecuter
-func commandExecuter(execCommand chan map[string]interface{}) {
+func commandExecuter(execCommand chan map[string]interface{}, sendChannel chan []byte) {
 	//var exec = ""
 	var regCommand = make(map[string][]string)
 
-	moduleInit(&regCommand)
+	moduleInit(&regCommand, sendChannel)
 	for command := range execCommand {
 		//fmt.Println("[CommandExecuter]->Command:", command)
 		commandSelecter(command, &regCommand)

@@ -74,7 +74,7 @@ func CommandHandler(ScheduleTasksChan chan map[string]interface{}, cfg *execModu
 			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand, lw)
 			for _, lines := range cfglines {
 				chatChan <- lines
-				fmt.Println("[ScheduleTasks-Module]:" + lines)
+				//fmt.Println("[ScheduleTasks-Module]:" + lines)
 			}
 		}
 		//chatChan <- fmt.Sprintf("%s 任务执行完成", command["nickName"].(string))

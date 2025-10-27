@@ -73,8 +73,9 @@ func main() {
 	}
 
 	var execCommand = make(chan map[string]interface{})
+	var sendChannel = make(chan []byte)
 	re := regexp.MustCompile(`\{[^}]*\}`)
-	go commandExecuter(execCommand)
+	go commandExecuter(execCommand, sendChannel)
 	go execModules.FocusWindows("SCUM  ")
 
 	// 启动 AHK exe
@@ -93,6 +94,7 @@ func main() {
 			}
 		}(conn)
 		go commandReader(re, conn, execCommand, NetworkSignal)
+		go commandSender(conn, sendChannel)
 		<-NetworkSignal
 	}
 }

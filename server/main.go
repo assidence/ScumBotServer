@@ -5,6 +5,7 @@ import (
 	"ScumBotServer/server/modules/DBwatcher"
 	IMServer2 "ScumBotServer/server/modules/IMServer"
 	Utf16tail "ScumBotServer/server/modules/tail"
+	"encoding/json"
 	"fmt"
 	"os"
 )
@@ -27,6 +28,32 @@ func EconomyCommandSender(EconomyCommand *chan *Utf16tail.Line, ecoch chan strin
 	for line := range *EconomyCommand {
 		ecoch <- line.Text
 		//fmt.Printf("[Network] Broadcast:\n", line.Text)
+	}
+}
+
+// 客户端信息分流器
+func IncomeMessagesSelector(imcomech chan IMServer2.Message, DBWincomech chan map[string]interface{}) {
+	for msg := range imcomech {
+		Content := msg.Content
+		//fmt.Println("Content:", Content)
+		var result map[string]interface{}
+		err := json.Unmarshal([]byte(Content), &result)
+		if err != nil {
+			fmt.Println("[IncomeMessageSelector] 解析失败:", err)
+			continue
+		}
+		//fmt.Println("[IncomeMessageSelector] 解析结果：", result)
+		if result["type"] == nil {
+			//fmt.Println("[IncomeMessageSelector] 非服务端任务 已跳过：", result["type"])
+			continue
+		}
+		switch result["type"].(string) {
+		case "onlinePlayers":
+			DBWincomech <- result
+			fmt.Println("[IncomeMessageSelector] 识别为DBWatcher任务")
+		default:
+			fmt.Println("[IncomeMessageSelector] 无法识别任务类型", result["type"])
+		}
 	}
 }
 
@@ -61,7 +88,8 @@ func main() {
 	addr := fmt.Sprintf("0.0.0.0:%s", os.Args[1])
 	online := make(chan struct{})
 	execch := make(chan string)
-	go IMServer2.StartHttpServer(addr, online)
+	incomech := make(chan IMServer2.Message)
+	go IMServer2.StartServer(addr, incomech, online)
 	for {
 		select {
 		case <-online:
@@ -89,7 +117,9 @@ func main() {
 	go modules2.EconomyHandler(ecoch, execch)
 
 	//数据库监控
-	go DBwatcher.Start(execch)
+	DBWincomech := make(chan map[string]interface{})
+	go DBwatcher.Start(execch, DBWincomech)
 
+	go IncomeMessagesSelector(incomech, DBWincomech)
 	select {}
 }

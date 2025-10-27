@@ -130,7 +130,7 @@ SCUM_Auto(*) {
 
     ; ========================
     ; 4️⃣ 聊天栏检测
-    chatExists := ImageSearch(&bx, &by, 0, 0, winW, winH, "*20 " chatIcon)
+    chatExists := ImageSearch(&bx, &by, 0, 0, winW, winH, "*60 " chatIcon)
     Log("聊天栏检测结果：" chatExists)
     ;Sleep 2000
     if !chatExists {

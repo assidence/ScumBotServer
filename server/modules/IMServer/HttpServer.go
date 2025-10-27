@@ -2,6 +2,7 @@ package IMServer
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"net"
 	"strings"
@@ -15,79 +16,123 @@ var validTokens = map[string]string{
 	"token789": "Broadcaster",
 }
 
-// Client Save online client
 type Client struct {
 	conn     net.Conn
 	username string
 }
 
-var clients = make(map[net.Conn]Client)
-var mu sync.Mutex
+type Message struct {
+	From    string `json:"from"`
+	Content string `json:"content"`
+}
 
-func broadcast(sender *Client, msg string) {
+var (
+	clients = make(map[net.Conn]Client)
+	mu      sync.Mutex
+)
+
+// StartServer 启动 IM 服务器
+func StartServer(address string, incoming chan Message, online chan struct{}) error {
+	ln, err := net.Listen("tcp", address)
+	if err != nil {
+		return err
+	}
+	fmt.Println("[IMServer] Listening on", address)
+
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				fmt.Println("[IMServer] accept error:", err)
+				continue
+			}
+			go handleClient(conn, incoming)
+		}
+	}()
+	close(online)
+	return nil
+}
+
+// 广播消息给其他客户端，保持消息原样（JSON 格式）
+func broadcast(sender *Client, msg Message) {
 	mu.Lock()
 	defer mu.Unlock()
+	//fmt.Println("已进入Broadcast函数")
+	//fmt.Println("msg的内容：", msg)
+	jsonBytes, _ := json.Marshal(msg)
+	//fmt.Println("jsonBtyes", jsonBytes)
+	//fmt.Println("Broadcast函数收到的json:", json.Unmarshal(jsonBytes, sender))
 	for _, c := range clients {
+		//fmt.Println("broadcast客户端比较：", c.conn, sender.conn)
 		if c.conn != sender.conn {
-			c.conn.Write([]byte(fmt.Sprintf("[%s]: %s\n", sender.username, msg)))
+			//fmt.Println("检测到其他客户端，广播数据：", string(jsonBytes), '\n')
+			_, err := c.conn.Write(append(jsonBytes, '\n'))
+			if err != nil {
+				fmt.Println("[IMServer] 广播失败:", err)
+			}
 		}
 	}
 }
 
-func handleConnection(conn net.Conn) {
+// 处理单个客户端
+func handleClient(conn net.Conn, incoming chan Message) {
 	defer conn.Close()
-	conn.Write([]byte("Welcome! Please provide your token:\n"))
 
 	reader := bufio.NewReader(conn)
-	token, _ := reader.ReadString('\n')
-	token = strings.TrimSpace(token)
-
-	username, ok := validTokens[token]
-	if !ok {
-		conn.Write([]byte("Invalid token. Connection closed.\n"))
+	token, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("[IMServer] failed to read token:", err)
 		return
 	}
 
-	client := &Client{conn: conn, username: username}
+	token = string(token[:len(token)-1])
+	username, ok := validTokens[token]
+	if !ok {
+		conn.Write([]byte("Invalid token\n"))
+		return
+	}
+
+	client := Client{conn: conn, username: username}
+
 	mu.Lock()
-	clients[client.conn] = *client
+	clients[conn] = client
 	mu.Unlock()
 
-	conn.Write([]byte("Authentication successful! You can start chatting.\n"))
-	fmt.Printf("[Network] %s connected from %s\n", username, conn.RemoteAddr())
+	fmt.Printf("[IMServer] %s connected\n", username)
+	conn.Write([]byte("Welcome " + username + "!\n"))
 
 	for {
-		msg, err := reader.ReadString('\n')
+		line, err := reader.ReadString('\n')
 		if err != nil {
-			fmt.Printf("[Network] %s disconnected.\n", username)
-			break
+			fmt.Println("[IMServer]", username, "disconnected:", err)
+			mu.Lock()
+			delete(clients, conn)
+			mu.Unlock()
+			return
 		}
-		msg = strings.TrimSpace(msg)
-		if msg == "" {
-			continue
-		}
-		fmt.Printf("[Network][%s]: %s\n", username, msg)
-		broadcast(client, msg)
-	}
-	mu.Lock()
-	delete(clients, conn)
-	mu.Unlock()
-}
 
-func StartHttpServer(address string, online chan struct{}) {
-	listener, err := net.Listen("tcp", address)
-	if err != nil {
-		panic(err)
-	}
-	defer listener.Close()
-	fmt.Printf("[Network] Server listening on %s ...\n", address)
-	close(online)
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			fmt.Println("[Network] Connection error:", err)
+		line = strings.TrimSpace(line) // 只去掉前后空白，不截断 JSON
+		if line == "" {
 			continue
 		}
-		go handleConnection(conn)
+
+		//fmt.Println("[IMServer] 收到消息原文:", line)
+
+		var msg Message
+		err = json.Unmarshal([]byte(line), &msg)
+		if err != nil {
+			fmt.Println("[IMServer] 解析失败:", err)
+			continue
+		}
+
+		msg.From = username
+		msg.Content = line
+
+		// 发给外部通道
+		incoming <- msg
+
+		// 广播给其他客户端
+		broadcast(&client, msg)
 	}
+
 }

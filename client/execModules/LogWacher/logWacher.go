@@ -109,6 +109,7 @@ func (lw *LogWatcher) Start() {
 			lw.lastOffset, _ = file.Seek(0, 1)
 			file.Close()
 			time.Sleep(lw.Interval)
+			//fmt.Println("[LogWatcher]已更新读取")
 		}
 	}()
 }
@@ -116,12 +117,19 @@ func (lw *LogWatcher) Start() {
 // parseBlock 解析玩家信息块
 func (lw *LogWatcher) parseBlock(block []string) {
 	text := strings.Join(block, "\n") // 保留换行
+	//fmt.Println("--------")
+	//fmt.Println(text)
 	for _, r := range lw.rules {
+		//fmt.Println("debug1")
+		//fmt.Println(r.BlockStart.MatchString(text))
+		//fmt.Println(r.Pattern.MatchString(text))
 		if r.BlockStart.MatchString(text) && r.Pattern.MatchString(text) {
+			//fmt.Println("debug2")
 			// 找出文本里所有匹配的玩家
 			matches := r.Pattern.FindAllStringSubmatch(text, -1)
 			tempPlayers := make(map[string]Player)
 			for _, match := range matches {
+				//fmt.Println("debug3")
 				if len(match) == 9 { //第0项是完整匹配 后面是捕获组
 					player := Player{
 						Name:           match[1],
@@ -134,6 +142,7 @@ func (lw *LogWatcher) parseBlock(block []string) {
 						LocationZ:      match[8],
 					}
 					tempPlayers[player.SteamID] = player
+					fmt.Println("[LogWatcher] 捕获玩家：", match[1])
 				}
 				if len(match) == 3 {
 					lw.Vehicles[match[1]] = append(lw.Vehicles[match[1]], match[2])
