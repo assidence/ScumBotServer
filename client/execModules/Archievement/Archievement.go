@@ -288,6 +288,8 @@ func recordSelecter(steamID string, action string, target string, targetQuantity
 		recorder.RecordBehaviorDetail(steamID, action, target, targetQuantity)
 	case "sold":
 		recorder.RecordBehaviorDetail(steamID, action, target, targetQuantity)
+	case "equip":
+		recorder.RecordBehaviorDetail(steamID, action, target, targetQuantity)
 	}
 
 	recorder.CheckAchievements(steamID, achv, chatChan, titleMgr)

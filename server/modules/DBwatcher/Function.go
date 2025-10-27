@@ -24,18 +24,20 @@ func Start(execch chan string, DBWincomech chan map[string]interface{}) {
 
 		if strings.Contains(msg["type"].(string), "onlinePlayers") {
 			PlayerList := strings.Split(msg["SteamIdList"].(string), "-")
-			result := strings.Join(GetNakedPlayers(db, PlayerList), "-")
-			if result == "" {
+			result := GetNakedPlayers(db, PlayerList)
+			if result == nil || len(result) == 0 {
 				continue
 			}
-			execData := map[string]string{
-				"steamID":     "000000",
-				"nickName":    "System",
-				"command":     "naked",
-				"commandArgs": result,
+			for _, steamId := range result {
+				execData := map[string]string{
+					"steamID":     "000000",
+					"nickName":    "System",
+					"command":     "equip",
+					"commandArgs": steamId + "-" + "naked" + "-" + "1",
+				}
+				jsonBytes, _ := json.Marshal(execData)
+				execch <- string(jsonBytes)
 			}
-			jsonBytes, _ := json.Marshal(execData)
-			execch <- string(jsonBytes)
 		}
 
 	}
