@@ -49,6 +49,9 @@ func commandReader(re *regexp.Regexp, conn net.Conn, execCommand chan map[string
 		switch msg["from"].(string) {
 		case "Broadcaster":
 			err = json.Unmarshal([]byte(msg["content"].(string)), &command)
+			if err != nil {
+				fmt.Println("[Network-Error] Broadcaster content is unreachable:" + err.Error())
+			}
 		default:
 			continue
 		}
