@@ -56,7 +56,9 @@ func moduleInit(regCommand *map[string][]string, sendChannel chan []byte) {
 	var PrefixTitleManagerChan = make(chan *Prefix.TitleManager)
 	go Prefix.Prefix(regCommand, PrefixChan, chatChan, PrefixTitleManagerChan, initChan)
 	TitleManager = <-PrefixTitleManagerChan
+	PublicInterface.TitleManager = TitleManager
 	<-initChan
+	close(PrefixTitleManagerChan)
 	fmt.Println("[Module] 称号模组已加载")
 
 	initChan = make(chan struct{})

@@ -14,6 +14,11 @@ func Selecter(steamID string, cfgCommand string) []string {
 		fmt.Println("[CommandSelecter-Panic] LogWatcher is nil")
 		return nil
 	}
+	TitleManager := PublicInterface.TitleManaget
+	if TitleManager == nil {
+		fmt.Println("[CommandSelecter-Panic] TitleManager is null")
+		return nil
+	}
 	commandPrefix := "#"
 	re := regexp.MustCompile(`^\w+`)
 	cmd := re.FindString(cfgCommand)

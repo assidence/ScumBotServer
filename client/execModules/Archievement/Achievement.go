@@ -4,6 +4,7 @@ import (
 	"ScumBotServer/client/execModules"
 	"ScumBotServer/client/execModules/CommandSelecter"
 	"ScumBotServer/client/execModules/Prefix"
+	"ScumBotServer/client/execModules/PublicInterface"
 	"ScumBotServer/client/execModules/permissionBucket"
 	"bufio"
 	"database/sql"
@@ -218,7 +219,7 @@ func (r *BehaviorRecorder) getBehaviorSum(steamID, actionType string) int {
 }
 
 // 检查并触发成就
-func (r *BehaviorRecorder) CheckAchievements(steamID string, achievements []Achievement, chatChan chan string, titleMgr *Prefix.TitleManager) {
+func (r *BehaviorRecorder) CheckAchievements(steamID string, achievements []Achievement, chatChan chan string) {
 	for _, achv := range achievements {
 		var qty int
 		err := r.db.QueryRow(`SELECT quantity FROM player_behaviors WHERE steam_id = ? AND action_type = ? AND target = ?`,
@@ -235,25 +236,30 @@ func (r *BehaviorRecorder) CheckAchievements(steamID string, achievements []Achi
 				continue
 			}
 
-			r.unlockAchievement(steamID, achv, chatChan, titleMgr)
+			r.unlockAchievement(steamID, achv, chatChan)
 		}
 	}
 }
 
 // 执行奖励动作
-func (r *BehaviorRecorder) unlockAchievement(steamID string, achv Achievement, chatChan chan string, titleMgr *Prefix.TitleManager) {
+func (r *BehaviorRecorder) unlockAchievement(steamID string, achv Achievement, chatChan chan string) {
+	TitleManager := PublicInterface.TitleManaget
+	if TitleManager == nil {
+		fmt.Println("[Achievement-Panic] TitleManager is null")
+		return
+	}
 	_, err := r.db.Exec(`INSERT INTO player_achievements (steam_id, achievement_name) VALUES (?, ?)`, steamID, achv.Name)
 	if err != nil {
 		return
 	}
 
-	if achv.RewardTitle != "" && titleMgr != nil {
+	if achv.RewardTitle != "" && TitleManager != nil {
 		Done := make(chan struct{})
 		//fmt.Println("lw.Players[steamID].Name:", lw.Players[steamID].Name)
-		titleMgr.CmdCh <- Prefix.TitleCommand{UserID: steamID, Command: Prefix.TitleCommandType("@给予称号"), Title: achv.RewardTitle, Done: Done}
+		TitleManager.CmdCh <- Prefix.TitleCommand{UserID: steamID, Command: Prefix.TitleCommandType("@给予称号"), Title: achv.RewardTitle, Done: Done}
 		<-Done
 		Done = make(chan struct{})
-		titleMgr.CmdCh <- Prefix.TitleCommand{UserID: steamID, Command: Prefix.TitleCommandType("@设置称号"), Title: achv.RewardTitle, Done: Done}
+		TitleManager.CmdCh <- Prefix.TitleCommand{UserID: steamID, Command: Prefix.TitleCommandType("@设置称号"), Title: achv.RewardTitle, Done: Done}
 		<-Done
 	}
 
@@ -279,7 +285,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 }
 
 // 分流行为记录器
-func recordSelecter(steamID string, action string, target string, targetQuantity int, recorder *BehaviorRecorder, achv []Achievement, chatChan chan string, titleMgr *Prefix.TitleManager) {
+func recordSelecter(steamID string, action string, target string, targetQuantity int, recorder *BehaviorRecorder, achv []Achievement, chatChan chan string) {
 	switch action {
 	case "Kill", "Death":
 		//recorder.RecordBehaviorDetail(steamID, action, "", 1)
@@ -291,11 +297,11 @@ func recordSelecter(steamID string, action string, target string, targetQuantity
 		recorder.RecordBehaviorDetail(steamID, action, target, targetQuantity)
 	}
 
-	recorder.CheckAchievements(steamID, achv, chatChan, titleMgr)
+	recorder.CheckAchievements(steamID, achv, chatChan)
 }
 
 // 主命令处理
-func CommandHandler(AchievementChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, recorder *BehaviorRecorder, titleMgr *Prefix.TitleManager, achv []Achievement) {
+func CommandHandler(AchievementChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, recorder *BehaviorRecorder, achv []Achievement) {
 	var commandLines []string
 	for command := range AchievementChan {
 		steamID := command["steamID"].(string)
@@ -311,7 +317,7 @@ func CommandHandler(AchievementChan chan map[string]interface{}, cfg *execModule
 		amount, _ := strconv.Atoi(commandArgs[2])
 		//fmt.Println("amount:", amount)
 
-		recordSelecter(commandArgs[0], cmdName, commandArgs[1], amount, recorder, achv, chatChan, titleMgr)
+		recordSelecter(commandArgs[0], cmdName, commandArgs[1], amount, recorder, achv, chatChan)
 
 		commandLines = cfg.Data[cmdName]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
@@ -328,18 +334,17 @@ func CommandHandler(AchievementChan chan map[string]interface{}, cfg *execModule
 //var lw = PublicInterface.LogWatcher
 
 // 模块入口
-func AchievementModule(regCommand *map[string][]string, AchievementChan chan map[string]interface{}, chatChan chan string, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
+func AchievementModule(regCommand *map[string][]string, AchievementChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
 	cfg := iniLoader()
 	PmBucket := createPermissionBucket()
 	PmBucket.CommandConfigChan <- cfg.Data
-	PmBucket.TitleManager = TitleManager
 	CommandRegister(cfg, regCommand)
 
 	recorder := newBehaviorRecorder()
 	achievements, _ := LoadAchievements("./ini/Achievement-gold.ini")
 
 	go func() {
-		CommandHandler(AchievementChan, cfg, PmBucket, chatChan, recorder, TitleManager, achievements)
+		CommandHandler(AchievementChan, cfg, PmBucket, chatChan, recorder, achievements)
 		recorder.Close()
 	}()
 	close(initChan)

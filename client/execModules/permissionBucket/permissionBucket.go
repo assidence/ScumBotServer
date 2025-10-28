@@ -1,7 +1,7 @@
 package permissionBucket
 
 import (
-	"ScumBotServer/client/execModules/Prefix"
+	"ScumBotServer/client/execModules/PublicInterface"
 	"database/sql"
 	"fmt"
 	"strconv"
@@ -44,7 +44,7 @@ type Manager struct {
 	quit              chan struct{}
 	wg                sync.WaitGroup
 	CommandConfigChan chan map[string]map[string]interface{}
-	TitleManager      *Prefix.TitleManager
+	//TitleManager      *Prefix.TitleManager
 }
 
 // NewManager 创建并初始化 sqlite 表
@@ -270,6 +270,11 @@ func (m *Manager) loadAllBucketsFromDB() error {
 
 // CanExecute 检查玩家是否可执行某命令（基于 CoolDown / DailyLimit / TotalLimit）
 func (m *Manager) CanExecute(playerID, command string) (bool, string) {
+	TitleManager := PublicInterface.TitleManaget
+	if TitleManager == nil {
+		fmt.Println("[PermissionBucket-Panic] TitleManager is null")
+		return false, "[Permission] TitleManager 未初始化"
+	}
 	m.mu.RLock()
 	//fmt.Println("PermissionConfigs:")
 	//fmt.Println(m.configs[command])
@@ -298,7 +303,7 @@ func (m *Manager) CanExecute(playerID, command string) (bool, string) {
 	}
 	// Prefix limit
 	if cfg.PrefixRequire != "" {
-		ok, _ := m.TitleManager.HasTitle(playerID, cfg.PrefixRequire)
+		ok, _ := TitleManager.HasTitle(playerID, cfg.PrefixRequire)
 		if !ok {
 			return false, fmt.Sprintf("[Permission] 执行此命令需要称号【%s】", cfg.PrefixRequire)
 		}

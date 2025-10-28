@@ -1,7 +1,10 @@
 package PublicInterface
 
-import "ScumBotServer/client/execModules/LogWacher"
+import (
+	"ScumBotServer/client/execModules/LogWacher"
+)
 
 var (
-	LogWatcher *LogWacher.LogWatcher
+	LogWatcher   *LogWacher.LogWatcher
+	TitleManager *TitleManagerStructure
 )

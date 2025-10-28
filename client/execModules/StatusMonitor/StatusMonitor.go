@@ -1,7 +1,6 @@
 package StatusMonitor
 
 import (
-	"ScumBotServer/client/execModules/Prefix"
 	"ScumBotServer/client/execModules/PublicInterface"
 	"encoding/json"
 	"fmt"
@@ -42,7 +41,7 @@ func SendOnline(sendChannel chan []byte) {
 
 //var lw = PublicInterface.LogWatcher
 
-func StatusMonitor(sendChannel chan []byte, tm *Prefix.TitleManager, initChan chan struct{}) {
+func StatusMonitor(sendChannel chan []byte, initChan chan struct{}) {
 	close(initChan)
 	for {
 		SendOnline(sendChannel)

@@ -2,7 +2,6 @@ package Announcer
 
 import (
 	"ScumBotServer/client/execModules"
-	"ScumBotServer/client/execModules/Prefix"
 	"ScumBotServer/client/execModules/permissionBucket"
 	"fmt"
 )
@@ -77,11 +76,10 @@ func CommandHandler(AnnouncerChan chan map[string]interface{}, cfg *execModules.
 
 //var lw = PublicInterface.LogWatcher
 
-func Announcer(regCommand *map[string][]string, AnnouncerChan chan map[string]interface{}, chatChan chan string, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
+func Announcer(regCommand *map[string][]string, AnnouncerChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
 	cfg := iniLoader()
 	PmBucket := createPermissionBucket()
 	PmBucket.CommandConfigChan <- cfg.Data
-	PmBucket.TitleManager = TitleManager
 	CommandRegister(cfg, regCommand)
 	go CommandHandler(AnnouncerChan, cfg, PmBucket, chatChan)
 	close(initChan)
