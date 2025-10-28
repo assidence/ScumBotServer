@@ -3,7 +3,7 @@ package Prefix
 import (
 	"ScumBotServer/client/execModules"
 	"ScumBotServer/client/execModules/CommandSelecter"
-	"ScumBotServer/client/execModules/LogWacher"
+	"ScumBotServer/client/execModules/PublicInterface"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -84,6 +84,11 @@ func (m *TitleManager) initDB() error {
 
 // 监听来自其他模块的指令
 func (m *TitleManager) listenCommands(chatChan chan string) {
+	lw := PublicInterface.LogWatcher
+	if lw == nil {
+		fmt.Println("[Prefix-Panic] LogWatcher is nil")
+		return
+	}
 	defer m.wg.Done()
 	for cmd := range m.CmdCh {
 		switch cmd.Command {
@@ -292,7 +297,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 		return titleCommandExec
 	}
 */
-func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Config, chatChan chan string, lw *LogWacher.LogWatcher) {
+func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Config, chatChan chan string) {
 	var commandLines []string
 	for command := range PrefixChan {
 		//chatChan <- fmt.Sprintf("%s 称号命令执行中 请耐心等待", command["nickName"].(string))
@@ -332,7 +337,7 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 		<-Done
 		commandLines = cfg.Data[commandString]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
-			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand, lw)
+			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand)
 			for _, lines := range cfglines {
 				chatChan <- lines
 				fmt.Println("[Prefix-Module]:" + lines)
@@ -346,16 +351,15 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 
 var manager *TitleManager
 
-var lw *LogWacher.LogWatcher
+//var lw = PublicInterface.LogWatcher
 
-func Prefix(regCommand *map[string][]string, PrefixChan chan map[string]interface{}, chatChan chan string, lwarg *LogWacher.LogWatcher, PrefixTitleManagerChan chan *TitleManager, initChan chan struct{}) {
+func Prefix(regCommand *map[string][]string, PrefixChan chan map[string]interface{}, chatChan chan string, PrefixTitleManagerChan chan *TitleManager, initChan chan struct{}) {
 	cfg := iniLoader()
 	//PmBucket := createPermissionBucket()
 	//PmBucket.CommandConfigChan <- cfg.Data
 	CommandRegister(cfg, regCommand)
 	manager, _ = NewTitleManager("./db/Prefix.db", chatChan)
-	lw = lwarg
-	go CommandHandler(PrefixChan, cfg, chatChan, lw)
+	go CommandHandler(PrefixChan, cfg, chatChan)
 	PrefixTitleManagerChan <- manager
 	close(initChan)
 	//select {}

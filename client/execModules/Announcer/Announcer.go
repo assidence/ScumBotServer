@@ -2,7 +2,6 @@ package Announcer
 
 import (
 	"ScumBotServer/client/execModules"
-	"ScumBotServer/client/execModules/LogWacher"
 	"ScumBotServer/client/execModules/Prefix"
 	"ScumBotServer/client/execModules/permissionBucket"
 	"fmt"
@@ -51,7 +50,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	(*regCommand)["Announcer"] = commandList
 }
 
-func CommandHandler(AnnouncerChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, lw *LogWacher.LogWatcher) {
+func CommandHandler(AnnouncerChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string) {
 	var commandLines []string
 	for command := range AnnouncerChan {
 		//chatChan <- fmt.Sprintf("%s 礼包发放中 请耐心等待", command["nickName"].(string))
@@ -76,13 +75,15 @@ func CommandHandler(AnnouncerChan chan map[string]interface{}, cfg *execModules.
 	defer PMbucket.Close()
 }
 
-func Announcer(regCommand *map[string][]string, AnnouncerChan chan map[string]interface{}, chatChan chan string, lw *LogWacher.LogWatcher, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
+//var lw = PublicInterface.LogWatcher
+
+func Announcer(regCommand *map[string][]string, AnnouncerChan chan map[string]interface{}, chatChan chan string, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
 	cfg := iniLoader()
 	PmBucket := createPermissionBucket()
 	PmBucket.CommandConfigChan <- cfg.Data
 	PmBucket.TitleManager = TitleManager
 	CommandRegister(cfg, regCommand)
-	go CommandHandler(AnnouncerChan, cfg, PmBucket, chatChan, lw)
+	go CommandHandler(AnnouncerChan, cfg, PmBucket, chatChan)
 	close(initChan)
 	//select {}
 }

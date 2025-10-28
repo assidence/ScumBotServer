@@ -3,7 +3,6 @@ package Kits
 import (
 	"ScumBotServer/client/execModules"
 	"ScumBotServer/client/execModules/CommandSelecter"
-	"ScumBotServer/client/execModules/LogWacher"
 	"ScumBotServer/client/execModules/Prefix"
 	"ScumBotServer/client/execModules/permissionBucket"
 	"fmt"
@@ -52,7 +51,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	(*regCommand)["Kits"] = commandList
 }
 
-func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, lw *LogWacher.LogWatcher) {
+func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string) {
 	var commandLines []string
 	for command := range KitsChan {
 		chatChan <- fmt.Sprintf("%s 礼包发放中 请耐心等待", command["nickName"].(string))
@@ -68,7 +67,7 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
-			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand, lw)
+			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand)
 			for _, lines := range cfglines {
 				chatChan <- lines
 				fmt.Println("[Kits-Module]:" + lines)
@@ -79,13 +78,15 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 	defer PMbucket.Close()
 }
 
-func Kits(regCommand *map[string][]string, KitsChan chan map[string]interface{}, chatChan chan string, lw *LogWacher.LogWatcher, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
+//var lw = PublicInterface.LogWatcher
+
+func Kits(regCommand *map[string][]string, KitsChan chan map[string]interface{}, chatChan chan string, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
 	cfg := iniLoader()
 	PmBucket := createPermissionBucket()
 	PmBucket.CommandConfigChan <- cfg.Data
 	PmBucket.TitleManager = TitleManager
 	CommandRegister(cfg, regCommand)
-	go CommandHandler(KitsChan, cfg, PmBucket, chatChan, lw)
+	go CommandHandler(KitsChan, cfg, PmBucket, chatChan)
 	close(initChan)
 	//select {}
 }

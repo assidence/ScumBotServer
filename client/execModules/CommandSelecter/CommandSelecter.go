@@ -1,12 +1,19 @@
 package CommandSelecter
 
 import (
-	"ScumBotServer/client/execModules/LogWacher"
+	"ScumBotServer/client/execModules/PublicInterface"
 	"fmt"
 	"regexp"
 )
 
-func Selecter(steamID string, cfgCommand string, lw *LogWacher.LogWatcher) []string {
+//var lw = PublicInterface.LogWatcher
+
+func Selecter(steamID string, cfgCommand string) []string {
+	lw := PublicInterface.LogWatcher
+	if lw == nil {
+		fmt.Println("[CommandSelecter-Panic] LogWatcher is nil")
+		return nil
+	}
 	commandPrefix := "#"
 	re := regexp.MustCompile(`^\w+`)
 	cmd := re.FindString(cfgCommand)

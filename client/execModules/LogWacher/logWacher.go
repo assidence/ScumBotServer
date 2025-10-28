@@ -185,7 +185,7 @@ func RunLogWatcher(lw *LogWatcher, LWChan chan *LogWatcher, initChan chan struct
 	LWChan <- lw
 
 	close(initChan)
-	close(LWChan)
+	//close(LWChan)
 	//select {}
 	//close(initChan)
 	// 定时打印玩家列表

@@ -29,6 +29,7 @@ func Start(execch chan string, DBWincomech chan map[string]interface{}) {
 				continue
 			}
 			for _, steamId := range result {
+				//fmt.Println("识别到裸体玩家:", steamId)
 				execData := map[string]string{
 					"steamID":     "000000",
 					"nickName":    "System",

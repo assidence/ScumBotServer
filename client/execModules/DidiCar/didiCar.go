@@ -3,7 +3,6 @@ package DidiCar
 import (
 	"ScumBotServer/client/execModules"
 	"ScumBotServer/client/execModules/CommandSelecter"
-	"ScumBotServer/client/execModules/LogWacher"
 	"ScumBotServer/client/execModules/Prefix"
 	"ScumBotServer/client/execModules/permissionBucket"
 	"fmt"
@@ -51,7 +50,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	(*regCommand)["DidiCar"] = commandList
 }
 
-func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, lw *LogWacher.LogWatcher) {
+func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string) {
 	//fmt.Println("im here")
 	var commandLines []string
 	for command := range didiCarChan {
@@ -69,7 +68,7 @@ func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Co
 
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
-			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand, lw)
+			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand)
 			for _, lines := range cfglines {
 				chatChan <- lines
 				fmt.Println("[DidiCar-Module]:" + lines)
@@ -80,13 +79,15 @@ func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Co
 	defer PMbucket.Close()
 }
 
-func DidiCar(regCommand *map[string][]string, didiCarChan chan map[string]interface{}, chatChan chan string, lw *LogWacher.LogWatcher, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
+//var lw = PublicInterface.LogWatcher
+
+func DidiCar(regCommand *map[string][]string, didiCarChan chan map[string]interface{}, chatChan chan string, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
 	cfg := iniLoader()
 	PmBucket := createPermissionBucket()
 	PmBucket.CommandConfigChan <- cfg.Data
 	PmBucket.TitleManager = TitleManager
 	CommandRegister(cfg, regCommand)
-	go CommandHandler(didiCarChan, cfg, PmBucket, chatChan, lw)
+	go CommandHandler(didiCarChan, cfg, PmBucket, chatChan)
 	close(initChan)
 	//select {}
 }

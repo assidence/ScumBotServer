@@ -1,9 +1,10 @@
 package StatusMonitor
 
 import (
-	"ScumBotServer/client/execModules/LogWacher"
 	"ScumBotServer/client/execModules/Prefix"
+	"ScumBotServer/client/execModules/PublicInterface"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -14,7 +15,12 @@ func sequenceJson(execData *map[string]interface{}) []byte {
 	return jsonByte
 }
 
-func SendOnline(lw *LogWacher.LogWatcher, sendChannel chan []byte) {
+func SendOnline(sendChannel chan []byte) {
+	lw := PublicInterface.LogWatcher
+	if lw == nil {
+		fmt.Println("[StatusMonitor-Panic] LogWatcher is nil")
+		return
+	}
 	var execData = map[string]interface{}{
 		"type":        "onlinePlayers",
 		"SteamIdList": "",
@@ -34,10 +40,12 @@ func SendOnline(lw *LogWacher.LogWatcher, sendChannel chan []byte) {
 	//fmt.Println("[StatusMonitor-Module] 已广播在线玩家列表:", string(jsonByte))
 }
 
-func StatusMonitor(sendChannel chan []byte, lw *LogWacher.LogWatcher, tm *Prefix.TitleManager, initChan chan struct{}) {
+//var lw = PublicInterface.LogWatcher
+
+func StatusMonitor(sendChannel chan []byte, tm *Prefix.TitleManager, initChan chan struct{}) {
 	close(initChan)
 	for {
-		SendOnline(lw, sendChannel)
+		SendOnline(sendChannel)
 		time.Sleep(10 * time.Second)
 	}
 }

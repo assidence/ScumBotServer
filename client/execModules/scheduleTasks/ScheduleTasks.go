@@ -3,7 +3,6 @@ package scheduleTasks
 import (
 	"ScumBotServer/client/execModules"
 	"ScumBotServer/client/execModules/CommandSelecter"
-	"ScumBotServer/client/execModules/LogWacher"
 	"ScumBotServer/client/execModules/Prefix"
 	"ScumBotServer/client/execModules/permissionBucket"
 	"fmt"
@@ -55,7 +54,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	(*regCommand)["ScheduleTasks"] = commandList
 }
 
-func CommandHandler(ScheduleTasksChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, lw *LogWacher.LogWatcher) {
+func CommandHandler(ScheduleTasksChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string) {
 	var commandLines []string
 	for command := range ScheduleTasksChan {
 		//chatChan <- fmt.Sprintf("%s 任务执行中 请耐心等待", command["nickName"].(string))
@@ -71,7 +70,7 @@ func CommandHandler(ScheduleTasksChan chan map[string]interface{}, cfg *execModu
 
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
-			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand, lw)
+			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand)
 			for _, lines := range cfglines {
 				chatChan <- lines
 				//fmt.Println("[ScheduleTasks-Module]:" + lines)
@@ -192,13 +191,15 @@ func TaskFunction(com string, ScheduleTasksChan chan map[string]interface{}) {
 	ScheduleTasksChan <- command
 }
 
-func ScheduleTasks(regCommand *map[string][]string, ScheduleTasksChan chan map[string]interface{}, chatChan chan string, lw *LogWacher.LogWatcher, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
+//var lw = PublicInterface.LogWatcher
+
+func ScheduleTasks(regCommand *map[string][]string, ScheduleTasksChan chan map[string]interface{}, chatChan chan string, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
 	cfg := iniLoader()
 	PmBucket := createPermissionBucket()
 	PmBucket.CommandConfigChan <- cfg.Data
 	PmBucket.TitleManager = TitleManager
 	CommandRegister(cfg, regCommand)
-	go CommandHandler(ScheduleTasksChan, cfg, PmBucket, chatChan, lw)
+	go CommandHandler(ScheduleTasksChan, cfg, PmBucket, chatChan)
 	ScheduleTasksTickerStartup(ScheduleTasksChan, cfg)
 	//BuildInPlayerMonitor(10*time.Second, chatChan)
 	close(initChan)

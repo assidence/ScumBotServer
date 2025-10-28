@@ -3,7 +3,6 @@ package Achievement
 import (
 	"ScumBotServer/client/execModules"
 	"ScumBotServer/client/execModules/CommandSelecter"
-	"ScumBotServer/client/execModules/LogWacher"
 	"ScumBotServer/client/execModules/Prefix"
 	"ScumBotServer/client/execModules/permissionBucket"
 	"bufio"
@@ -260,7 +259,7 @@ func (r *BehaviorRecorder) unlockAchievement(steamID string, achv Achievement, c
 
 	for _, cmd := range achv.RewardCommandLines {
 		//fmt.Println("cmd:", cmd)
-		cfglines := CommandSelecter.Selecter(steamID, cmd, lw)
+		cfglines := CommandSelecter.Selecter(steamID, cmd)
 		for _, lines := range cfglines {
 			chatChan <- lines
 			fmt.Println("[Achievement-Module]:" + lines)
@@ -296,7 +295,7 @@ func recordSelecter(steamID string, action string, target string, targetQuantity
 }
 
 // 主命令处理
-func CommandHandler(AchievementChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, lw *LogWacher.LogWatcher, recorder *BehaviorRecorder, titleMgr *Prefix.TitleManager, achv []Achievement) {
+func CommandHandler(AchievementChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, recorder *BehaviorRecorder, titleMgr *Prefix.TitleManager, achv []Achievement) {
 	var commandLines []string
 	for command := range AchievementChan {
 		steamID := command["steamID"].(string)
@@ -316,7 +315,7 @@ func CommandHandler(AchievementChan chan map[string]interface{}, cfg *execModule
 
 		commandLines = cfg.Data[cmdName]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
-			cfglines := CommandSelecter.Selecter(commandArgs[0], cfgCommand, lw)
+			cfglines := CommandSelecter.Selecter(commandArgs[0], cfgCommand)
 			for _, lines := range cfglines {
 				chatChan <- lines
 				fmt.Println("[Achievement-Module]:" + lines)
@@ -326,10 +325,10 @@ func CommandHandler(AchievementChan chan map[string]interface{}, cfg *execModule
 	defer PMbucket.Close()
 }
 
-var lw *LogWacher.LogWatcher
+//var lw = PublicInterface.LogWatcher
 
 // 模块入口
-func AchievementModule(regCommand *map[string][]string, AchievementChan chan map[string]interface{}, chatChan chan string, lwarg *LogWacher.LogWatcher, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
+func AchievementModule(regCommand *map[string][]string, AchievementChan chan map[string]interface{}, chatChan chan string, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
 	cfg := iniLoader()
 	PmBucket := createPermissionBucket()
 	PmBucket.CommandConfigChan <- cfg.Data
@@ -339,10 +338,8 @@ func AchievementModule(regCommand *map[string][]string, AchievementChan chan map
 	recorder := newBehaviorRecorder()
 	achievements, _ := LoadAchievements("./ini/Achievement-gold.ini")
 
-	lw = lwarg
-
 	go func() {
-		CommandHandler(AchievementChan, cfg, PmBucket, chatChan, lw, recorder, TitleManager, achievements)
+		CommandHandler(AchievementChan, cfg, PmBucket, chatChan, recorder, TitleManager, achievements)
 		recorder.Close()
 	}()
 	close(initChan)
