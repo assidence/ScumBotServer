@@ -67,6 +67,7 @@ func CommandHandler(ScheduleTasksChan chan map[string]interface{}, cfg *execModu
 		}
 
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
+		//fmt.Println("[INFO-ScheduleTasks]->Command:", commandLines)
 		for _, cfgCommand := range commandLines {
 			cfglines := Public.Selecter(command["steamID"].(string), cfgCommand)
 			for _, lines := range cfglines {

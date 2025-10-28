@@ -1,1 +1,1 @@
-SpawnItem Watermelon 5 %s
+SpawnItem Watermelon 5 Location %s

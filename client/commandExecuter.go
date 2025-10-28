@@ -3,7 +3,6 @@ package main
 import (
 	"ScumBotServer/client/execModules"
 	"ScumBotServer/client/execModules/Announcer"
-	"ScumBotServer/client/execModules/Archievement"
 	"ScumBotServer/client/execModules/DidiCar"
 	"ScumBotServer/client/execModules/Kits"
 	"ScumBotServer/client/execModules/Public"
@@ -26,8 +25,6 @@ var AchievementChan = make(chan map[string]interface{}, 100)
 
 var chatChan = make(chan string, 100)
 
-var TitleManager *Public.TitleManager
-
 // moduleInit initiation the command function module
 func moduleInit(regCommand *map[string][]string, sendChannel chan []byte) {
 	var initChan = make(chan struct{})
@@ -46,7 +43,7 @@ func moduleInit(regCommand *map[string][]string, sendChannel chan []byte) {
 	fmt.Println("[Module] 称号模组已加载")
 
 	initChan = make(chan struct{})
-	go Achievement.AchievementModule(regCommand, AchievementChan, chatChan, initChan)
+	go Public.AchievementModule(regCommand, AchievementChan, chatChan, initChan)
 	<-initChan
 	fmt.Println("[Module] 成就模组已加载")
 
@@ -123,6 +120,7 @@ func commandSelecter(command map[string]interface{}, regCommand *map[string][]st
 func commandSendToChat(iniChan chan struct{}) {
 	close(iniChan)
 	for commandString := range chatChan {
+		//fmt.Println("[DEBUG]commandString:", commandString)
 		err := execModules.SendChatMessage(commandString)
 		if err != nil {
 			fmt.Println("[CommandExecuter]->Error:", err)

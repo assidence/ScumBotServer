@@ -50,9 +50,30 @@ func Selecter(steamID string, cfgCommand string) []string {
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID, nickName))
 	case "Teleport":
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID))
+	case "AchievementRewardItem":
+		OnlinePlayers := GlobalLogWatcher.GetPlayers()
+		for steamid, _ := range OnlinePlayers {
+			if steamid == "" {
+				continue
+			}
+			playerTitle, _ := GlobalTitleManager.GetActiveTitle(steamid)
+			if playerTitle == "" {
+				continue
+			}
+			for _, achievement := range *GlobalAchievements {
+
+				if achievement.Name != playerTitle {
+					continue
+				}
+				//fmt.Println("[DEBUG]RewardCommandLines:", achievement.RewardCommandLines)
+				for _, line := range achievement.RewardCommandLines {
+					cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(line, steamid))
+				}
+			}
+		}
 	default:
 		//fmt.Println("[ERROR-CommandSelecter]->Error:无法匹配命令 ", cmd)
-		cfgChat = append(cfgChat, cmd)
+		cfgChat = append(cfgChat, cfgCommand)
 	}
 	return cfgChat
 }
