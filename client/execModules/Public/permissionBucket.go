@@ -1,7 +1,6 @@
-package permissionBucket
+package Public
 
 import (
-	"ScumBotServer/client/execModules/PublicInterface"
 	"database/sql"
 	"fmt"
 	"strconv"
@@ -270,8 +269,8 @@ func (m *Manager) loadAllBucketsFromDB() error {
 
 // CanExecute 检查玩家是否可执行某命令（基于 CoolDown / DailyLimit / TotalLimit）
 func (m *Manager) CanExecute(playerID, command string) (bool, string) {
-	TitleManager := PublicInterface.TitleManaget
-	if TitleManager == nil {
+	//TitleManager := Public.TitleManager
+	if GlobalTitleManager == nil {
 		fmt.Println("[PermissionBucket-Panic] TitleManager is null")
 		return false, "[Permission] TitleManager 未初始化"
 	}
@@ -303,7 +302,7 @@ func (m *Manager) CanExecute(playerID, command string) (bool, string) {
 	}
 	// Prefix limit
 	if cfg.PrefixRequire != "" {
-		ok, _ := TitleManager.HasTitle(playerID, cfg.PrefixRequire)
+		ok, _ := GlobalTitleManager.HasTitle(playerID, cfg.PrefixRequire)
 		if !ok {
 			return false, fmt.Sprintf("[Permission] 执行此命令需要称号【%s】", cfg.PrefixRequire)
 		}
@@ -351,50 +350,3 @@ func (m *Manager) dailyResetLoop() {
 		}
 	}
 }
-
-//Example
-/*package main
-
-import (
-	"fmt"
-	"time"
-)
-
-func main() {
-	// 创建 manager（SQLite 文件放当前目录）
-	manager, err := NewManager("usage.db")
-	if err != nil {
-		panic(err)
-	}
-	defer manager.Close()
-
-	// 模拟：命令模块加载其 ini 并把配置发到信道
-	// 假设你有 Commands/dir 下的 ini 文件，示例里我直接调用同一目录下的 sample ini
-	if err := LoadAndSendINI("commands.ini"); err != nil {
-		fmt.Println("load ini error:", err)
-	} else {
-		fmt.Println("loaded commands.ini")
-	}
-
-	// 等几百毫秒让管理器合并配置
-	time.Sleep(200 * time.Millisecond)
-
-	// 测试：玩家请求执行命令
-	player := "76561198281015619"
-	cmd := "@新手礼包"
-
-	for i := 0; i < 5; i++ {
-		ok, msg := manager.CanExecute(player, cmd)
-		fmt.Printf("[Try %d] CanExecute(%s, %s) => %v : %s\n", i+1, player, cmd, ok, msg)
-		if ok {
-			manager.Consume(player, cmd)
-			fmt.Println("Consumed")
-		}
-		time.Sleep(1 * time.Second)
-	}
-
-	// 等待一会儿观察 DB 写入
-	time.Sleep(500 * time.Millisecond)
-	fmt.Println("done")
-}
-*/

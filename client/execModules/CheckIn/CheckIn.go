@@ -2,9 +2,8 @@ package CheckIn
 
 import (
 	"ScumBotServer/client/execModules"
-	"ScumBotServer/client/execModules/LogWacher"
-	"ScumBotServer/client/execModules/Prefix"
-	"ScumBotServer/client/execModules/permissionBucket"
+	"ScumBotServer/client/execModules/Public"
+	"ScumBotServer/client/execModules/Public/LogWatcher"
 	"database/sql"
 	"fmt"
 	"time"
@@ -40,8 +39,8 @@ func iniLoader() *execModules.Config {
 }
 
 // createPermissionBucket: 保持与其它模块相同的权限桶创建风格
-func createPermissionBucket() *permissionBucket.Manager {
-	pm, err := permissionBucket.NewManager("./db/CheckInPerm.db")
+func createPermissionBucket() *Public.Manager {
+	pm, err := Public.NewManager("./db/CheckInPerm.db")
 	if err != nil {
 		panic(err)
 	}
@@ -63,7 +62,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 }
 
 // CommandHandler 与项目其它模块风格保持一致 从 CheckInChan 接收 map[string]interface{}，字段预期： steamID, nickName, command, action
-func CommandHandler(CheckInChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string, lw *LogWacher.LogWatcher) {
+func CommandHandler(CheckInChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *Public.Manager, chatChan chan string, lw *LogWatcher.LogWatcher) {
 	for command := range CheckInChan {
 		nick := fmt.Sprint(command["nickName"])
 		steamID := fmt.Sprint(command["steamID"])
@@ -105,7 +104,7 @@ func CommandHandler(CheckInChan chan map[string]interface{}, cfg *execModules.Co
 
 // handleSign: 主业务入口 - 签到并（可选）发放奖励
 // 按项目风格：奖励用 cfg.Data[section][\"Command\"] 中的命令行模板（如果存在）通过 CommandSelecter 发放
-func handleSign(steamID, nick string, cfg *execModules.Config, chatChan chan string, lw *LogWacher.LogWatcher) (string, error) {
+func handleSign(steamID, nick string, cfg *execModules.Config, chatChan chan string, lw *LogWatcher.LogWatcher) (string, error) {
 	if db == nil {
 		return "", fmt.Errorf("database not initialized")
 	}
@@ -165,7 +164,7 @@ func handleQuery(steamID, nick string) (string, error) {
 	return fmt.Sprintf("%s 上次签到：%s，连续签到：%d 天，总签到：%d 次。", nick, lastDate, streak, total), nil
 }
 
-func CheckInModule(regCommand *map[string][]string, CheckInChan chan map[string]interface{}, chatChan chan string, lw *LogWacher.LogWatcher, TitleManager *Prefix.TitleManager, initChan chan struct{}) {
+func CheckInModule(regCommand *map[string][]string, CheckInChan chan map[string]interface{}, chatChan chan string, lw *LogWatcher.LogWatcher, TitleManager *Public.TitleManager, initChan chan struct{}) {
 	// 1. 读取 ini
 	cfg := iniLoader()
 

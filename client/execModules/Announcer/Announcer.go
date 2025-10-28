@@ -2,7 +2,7 @@ package Announcer
 
 import (
 	"ScumBotServer/client/execModules"
-	"ScumBotServer/client/execModules/permissionBucket"
+	"ScumBotServer/client/execModules/Public"
 	"fmt"
 )
 
@@ -30,8 +30,8 @@ func iniLoader() *execModules.Config {
 	return cfg
 }
 
-func createPermissionBucket() *permissionBucket.Manager {
-	PmBucket, err := permissionBucket.NewManager("./db/Announcer.db")
+func createPermissionBucket() *Public.Manager {
+	PmBucket, err := Public.NewManager("./db/Announcer.db")
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +49,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	(*regCommand)["Announcer"] = commandList
 }
 
-func CommandHandler(AnnouncerChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string) {
+func CommandHandler(AnnouncerChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *Public.Manager, chatChan chan string) {
 	var commandLines []string
 	for command := range AnnouncerChan {
 		//chatChan <- fmt.Sprintf("%s 礼包发放中 请耐心等待", command["nickName"].(string))
@@ -74,7 +74,7 @@ func CommandHandler(AnnouncerChan chan map[string]interface{}, cfg *execModules.
 	defer PMbucket.Close()
 }
 
-//var lw = PublicInterface.LogWatcher
+//var lw = Public.LogWatcher
 
 func Announcer(regCommand *map[string][]string, AnnouncerChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
 	cfg := iniLoader()

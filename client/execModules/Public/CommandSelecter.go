@@ -1,21 +1,16 @@
-package CommandSelecter
+package Public
 
 import (
-	"ScumBotServer/client/execModules/PublicInterface"
 	"fmt"
 	"regexp"
 )
 
-//var lw = PublicInterface.LogWatcher
-
 func Selecter(steamID string, cfgCommand string) []string {
-	lw := PublicInterface.LogWatcher
-	if lw == nil {
+	if GlobalLogWatcher == nil {
 		fmt.Println("[CommandSelecter-Panic] LogWatcher is nil")
 		return nil
 	}
-	TitleManager := PublicInterface.TitleManaget
-	if TitleManager == nil {
+	if GlobalTitleManager == nil {
 		fmt.Println("[CommandSelecter-Panic] TitleManager is null")
 		return nil
 	}
@@ -25,11 +20,11 @@ func Selecter(steamID string, cfgCommand string) []string {
 	var cfgChat []string
 	switch cmd {
 	case "DestroyDiDi":
-		if lw.Vehicles["BPC_Dirtbike"] == nil {
+		if GlobalLogWatcher.Vehicles["BPC_Dirtbike"] == nil {
 			cfgChat = append(cfgChat, fmt.Sprintf("找不到%s车辆类型的id列表", "BPC_Dirtbike"))
 
 		}
-		for _, vehicleID := range lw.Vehicles["BPC_Dirtbike"] {
+		for _, vehicleID := range GlobalLogWatcher.Vehicles["BPC_Dirtbike"] {
 			cfgChat = append(cfgChat, fmt.Sprintf("%sDestroyVehicle %s", commandPrefix, vehicleID))
 		}
 	case "SpawnItem":
@@ -37,20 +32,20 @@ func Selecter(steamID string, cfgCommand string) []string {
 	case "ChangeCurrencyBalance":
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID))
 	case "SpawnVehicle":
-		PLocationX := lw.Players[steamID].LocationX
-		PLocationY := lw.Players[steamID].LocationY
-		PLocationZ := lw.Players[steamID].LocationZ
+		PLocationX := GlobalLogWatcher.Players[steamID].LocationX
+		PLocationY := GlobalLogWatcher.Players[steamID].LocationY
+		PLocationZ := GlobalLogWatcher.Players[steamID].LocationZ
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, PLocationX, PLocationY, PLocationZ))
 	case "ListPlayers":
 		cfgChat = append(cfgChat, commandPrefix+cfgCommand)
 	case "SetFakeName":
 		var nickName string
-		if lw.Players[steamID].Prefix != "" {
-			nickName = fmt.Sprintf("-★%s★-%s", lw.Players[steamID].Prefix, lw.Players[steamID].Name)
+		if GlobalLogWatcher.Players[steamID].Prefix != "" {
+			nickName = fmt.Sprintf("-★%s★-%s", GlobalLogWatcher.Players[steamID].Prefix, GlobalLogWatcher.Players[steamID].Name)
 		} else {
 			fmt.Println("CommandSelecter:")
 			//fmt.Println(lw.Players[steamID])
-			nickName = lw.Players[steamID].Name
+			nickName = GlobalLogWatcher.Players[steamID].Name
 		}
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID, nickName))
 	case "Teleport":

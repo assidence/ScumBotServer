@@ -1,9 +1,7 @@
-package Prefix
+package Public
 
 import (
 	"ScumBotServer/client/execModules"
-	"ScumBotServer/client/execModules/CommandSelecter"
-	"ScumBotServer/client/execModules/PublicInterface"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -84,8 +82,7 @@ func (m *TitleManager) initDB() error {
 
 // 监听来自其他模块的指令
 func (m *TitleManager) listenCommands(chatChan chan string) {
-	lw := PublicInterface.LogWatcher
-	if lw == nil {
+	if GlobalLogWatcher == nil {
 		fmt.Println("[Prefix-Panic] LogWatcher is nil")
 		return
 	}
@@ -94,30 +91,30 @@ func (m *TitleManager) listenCommands(chatChan chan string) {
 		switch cmd.Command {
 		case CommandGrant:
 			if err := m.grantTitle(cmd.UserID, cmd.Title); err != nil {
-				chatChan <- fmt.Sprintf("%s授予称号失败: %v", lw.Players[cmd.UserID].Name, err)
+				chatChan <- fmt.Sprintf("%s授予称号失败: %v", GlobalLogWatcher.Players[cmd.UserID].Name, err)
 				fmt.Println("[Error-Prefix] " + fmt.Sprintf("%s授予称号失败: %v", cmd.UserID, err))
 			} else {
-				chatChan <- fmt.Sprintf("%s获得称号 %s", lw.Players[cmd.UserID].Name, cmd.Title)
+				chatChan <- fmt.Sprintf("%s获得称号 %s", GlobalLogWatcher.Players[cmd.UserID].Name, cmd.Title)
 				fmt.Printf("[Prefix-Module]  玩家 %s 获得称号 %s\n", cmd.UserID, cmd.Title)
 			}
 
 		case CommandRemove:
 			if err := m.removeTitle(cmd.UserID, cmd.Title); err != nil {
-				chatChan <- fmt.Sprintf("%s移除称号失败: %v", lw.Players[cmd.UserID].Name, err)
+				chatChan <- fmt.Sprintf("%s移除称号失败: %v", GlobalLogWatcher.Players[cmd.UserID].Name, err)
 				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] %s移除称号失败: %v", cmd.UserID, err))
 			} else {
-				chatChan <- fmt.Sprintf("玩家 %s 移除称号 %s", lw.Players[cmd.UserID].Name, cmd.Title)
+				chatChan <- fmt.Sprintf("玩家 %s 移除称号 %s", GlobalLogWatcher.Players[cmd.UserID].Name, cmd.Title)
 				fmt.Printf("[Prefix-Module] 玩家 %s 移除称号 %s\n", cmd.UserID, cmd.Title)
 			}
 
 		case CommandSet:
 			if err := m.setActiveTitle(cmd.UserID, cmd.Title); err != nil {
-				chatChan <- fmt.Sprintf("%s设置当前称号失败: %v", lw.Players[cmd.UserID].Name, err)
+				chatChan <- fmt.Sprintf("%s设置当前称号失败: %v", GlobalLogWatcher.Players[cmd.UserID].Name, err)
 				fmt.Printf("[Error-Prefix] 玩家 %s设置当前称号失败: %v\n", cmd.UserID, err)
 			} else {
-				p := lw.Players[cmd.UserID]
+				p := GlobalLogWatcher.Players[cmd.UserID]
 				p.Prefix = cmd.Title
-				lw.Players[cmd.UserID] = p
+				GlobalLogWatcher.Players[cmd.UserID] = p
 				//fmt.Println(p)
 				line := fmt.Sprintf("#SetFakeName %s -★%s★-%s", cmd.UserID, cmd.Title, p.Name)
 				chatChan <- line
@@ -126,9 +123,9 @@ func (m *TitleManager) listenCommands(chatChan chan string) {
 				//fmt.Printf("[Prefix-Module] 玩家 %s 当前称号设为 %s\n", cmd.UserID, cmd.Title)
 			}
 		case CommandUnSet:
-			p := lw.Players[cmd.UserID]
+			p := GlobalLogWatcher.Players[cmd.UserID]
 			p.Prefix = ""
-			lw.Players[cmd.UserID] = p
+			GlobalLogWatcher.Players[cmd.UserID] = p
 			line := fmt.Sprintf("#SetFakeName %s %s", cmd.UserID, p.Name)
 			chatChan <- line
 			chatChan <- fmt.Sprintf("%s当前称号已取消展示", p.Name)
@@ -319,7 +316,7 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 		if cfg.Data[commandString]["PrefixRequire"].(string) != "default" {
 			var1 := command["steamID"].(string)
 			var2 := cfg.Data[commandString]["PrefixRequire"].(string)
-			ok, _ := manager.HasTitle(var1, var2)
+			ok, _ := GlobalTitleManager.HasTitle(var1, var2)
 			if !ok {
 				chatChan <- fmt.Sprintf("[Permission] 执行此命令需要称号【%s】", cfg.Data[commandString]["PrefixRequire"].(string))
 				continue
@@ -333,11 +330,11 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 		}
 
 		Done := make(chan struct{})
-		manager.CmdCh <- TitleCommand{UserID: commandArgs[1], Command: TitleCommandType(commandString), Title: commandArgs[0], Done: Done}
+		GlobalTitleManager.CmdCh <- TitleCommand{UserID: commandArgs[1], Command: TitleCommandType(commandString), Title: commandArgs[0], Done: Done}
 		<-Done
 		commandLines = cfg.Data[commandString]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
-			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand)
+			cfglines := Selecter(command["steamID"].(string), cfgCommand)
 			for _, lines := range cfglines {
 				chatChan <- lines
 				fmt.Println("[Prefix-Module]:" + lines)
@@ -349,18 +346,17 @@ func CommandHandler(PrefixChan chan map[string]interface{}, cfg *execModules.Con
 	//defer PMbucket.Close()
 }
 
-var manager *TitleManager
+//var manager *TitleManager
 
-//var lw = PublicInterface.LogWatcher
+//var lw = Public.LogWatcher
 
-func Prefix(regCommand *map[string][]string, PrefixChan chan map[string]interface{}, chatChan chan string, PrefixTitleManagerChan chan *TitleManager, initChan chan struct{}) {
+func Prefix(regCommand *map[string][]string, PrefixChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
 	cfg := iniLoader()
 	//PmBucket := createPermissionBucket()
 	//PmBucket.CommandConfigChan <- cfg.Data
 	CommandRegister(cfg, regCommand)
-	manager, _ = NewTitleManager("./db/Prefix.db", chatChan)
+	GlobalTitleManager, _ = NewTitleManager("./db/Prefix.db", chatChan)
 	go CommandHandler(PrefixChan, cfg, chatChan)
-	PrefixTitleManagerChan <- manager
 	close(initChan)
 	//select {}
 }

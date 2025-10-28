@@ -2,8 +2,7 @@ package DidiCar
 
 import (
 	"ScumBotServer/client/execModules"
-	"ScumBotServer/client/execModules/CommandSelecter"
-	"ScumBotServer/client/execModules/permissionBucket"
+	"ScumBotServer/client/execModules/Public"
 	"fmt"
 )
 
@@ -30,8 +29,8 @@ func iniLoader() *execModules.Config {
 	return cfg
 }
 
-func createPermissionBucket() *permissionBucket.Manager {
-	PmBucket, err := permissionBucket.NewManager("./db/didiCar.db")
+func createPermissionBucket() *Public.Manager {
+	PmBucket, err := Public.NewManager("./db/didiCar.db")
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +48,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	(*regCommand)["DidiCar"] = commandList
 }
 
-func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string) {
+func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *Public.Manager, chatChan chan string) {
 	//fmt.Println("im here")
 	var commandLines []string
 	for command := range didiCarChan {
@@ -67,7 +66,7 @@ func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Co
 
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
-			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand)
+			cfglines := Public.Selecter(command["steamID"].(string), cfgCommand)
 			for _, lines := range cfglines {
 				chatChan <- lines
 				fmt.Println("[DidiCar-Module]:" + lines)
@@ -78,7 +77,7 @@ func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Co
 	defer PMbucket.Close()
 }
 
-//var lw = PublicInterface.LogWatcher
+//var lw = Public.LogWatcher
 
 func DidiCar(regCommand *map[string][]string, didiCarChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
 	cfg := iniLoader()

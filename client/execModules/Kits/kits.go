@@ -2,8 +2,7 @@ package Kits
 
 import (
 	"ScumBotServer/client/execModules"
-	"ScumBotServer/client/execModules/CommandSelecter"
-	"ScumBotServer/client/execModules/permissionBucket"
+	"ScumBotServer/client/execModules/Public"
 	"fmt"
 )
 
@@ -31,8 +30,8 @@ func iniLoader() *execModules.Config {
 	return cfg
 }
 
-func createPermissionBucket() *permissionBucket.Manager {
-	PmBucket, err := permissionBucket.NewManager("./db/Kits.db")
+func createPermissionBucket() *Public.Manager {
+	PmBucket, err := Public.NewManager("./db/Kits.db")
 	if err != nil {
 		panic(err)
 	}
@@ -50,7 +49,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	(*regCommand)["Kits"] = commandList
 }
 
-func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string) {
+func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *Public.Manager, chatChan chan string) {
 	var commandLines []string
 	for command := range KitsChan {
 		chatChan <- fmt.Sprintf("%s 礼包发放中 请耐心等待", command["nickName"].(string))
@@ -66,7 +65,7 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
-			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand)
+			cfglines := Public.Selecter(command["steamID"].(string), cfgCommand)
 			for _, lines := range cfglines {
 				chatChan <- lines
 				fmt.Println("[Kits-Module]:" + lines)
@@ -77,7 +76,7 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 	defer PMbucket.Close()
 }
 
-//var lw = PublicInterface.LogWatcher
+//var lw = Public.LogWatcher
 
 func Kits(regCommand *map[string][]string, KitsChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
 	cfg := iniLoader()

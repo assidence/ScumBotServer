@@ -6,9 +6,7 @@ import (
 	"ScumBotServer/client/execModules/Archievement"
 	"ScumBotServer/client/execModules/DidiCar"
 	"ScumBotServer/client/execModules/Kits"
-	"ScumBotServer/client/execModules/LogWacher"
-	"ScumBotServer/client/execModules/Prefix"
-	"ScumBotServer/client/execModules/PublicInterface"
+	"ScumBotServer/client/execModules/Public"
 	"ScumBotServer/client/execModules/StatusMonitor"
 	"ScumBotServer/client/execModules/scheduleTasks"
 	"fmt"
@@ -28,13 +26,7 @@ var AchievementChan = make(chan map[string]interface{}, 100)
 
 var chatChan = make(chan string, 100)
 
-var lw = &LogWacher.LogWatcher{
-	FilePath: "",
-	Interval: 0,
-	Players:  nil,
-}
-
-var TitleManager *Prefix.TitleManager
+var TitleManager *Public.TitleManager
 
 // moduleInit initiation the command function module
 func moduleInit(regCommand *map[string][]string, sendChannel chan []byte) {
@@ -44,51 +36,43 @@ func moduleInit(regCommand *map[string][]string, sendChannel chan []byte) {
 	fmt.Println("[Module] 命令执行器已加载")
 
 	initChan = make(chan struct{})
-	var LWChan = make(chan *LogWacher.LogWatcher)
-	go LogWacher.RunLogWatcher(lw, LWChan, initChan)
-	lw = <-LWChan
-	PublicInterface.LogWatcher = lw
+	go Public.RunLogWatcher(initChan)
 	<-initChan
-	close(LWChan)
 	fmt.Println("[Module] 客户端日志监控模组已加载")
 
 	initChan = make(chan struct{})
-	var PrefixTitleManagerChan = make(chan *Prefix.TitleManager)
-	go Prefix.Prefix(regCommand, PrefixChan, chatChan, PrefixTitleManagerChan, initChan)
-	TitleManager = <-PrefixTitleManagerChan
-	PublicInterface.TitleManager = TitleManager
+	go Public.Prefix(regCommand, PrefixChan, chatChan, initChan)
 	<-initChan
-	close(PrefixTitleManagerChan)
 	fmt.Println("[Module] 称号模组已加载")
 
 	initChan = make(chan struct{})
-	go Achievement.AchievementModule(regCommand, AchievementChan, chatChan, TitleManager, initChan)
+	go Achievement.AchievementModule(regCommand, AchievementChan, chatChan, initChan)
 	<-initChan
 	fmt.Println("[Module] 成就模组已加载")
 
 	initChan = make(chan struct{})
-	go Kits.Kits(regCommand, KitsChan, chatChan, TitleManager, initChan)
+	go Kits.Kits(regCommand, KitsChan, chatChan, initChan)
 	<-initChan
 	fmt.Println("[Module] 新手礼包模组已加载")
 
 	initChan = make(chan struct{})
-	go DidiCar.DidiCar(regCommand, didiCarChan, chatChan, TitleManager, initChan)
+	go DidiCar.DidiCar(regCommand, didiCarChan, chatChan, initChan)
 	<-initChan
 	fmt.Println("[Module] 滴滴车模组已加载")
 
 	initChan = make(chan struct{})
-	go scheduleTasks.ScheduleTasks(regCommand, ScheduleTaskChan, chatChan, TitleManager, initChan)
+	go scheduleTasks.ScheduleTasks(regCommand, ScheduleTaskChan, chatChan, initChan)
 	<-initChan
 	fmt.Println("[Module] 定时任务模组已加载")
 
 	initChan = make(chan struct{})
-	go Announcer.Announcer(regCommand, AnnouncerChan, chatChan, TitleManager, initChan)
+	go Announcer.Announcer(regCommand, AnnouncerChan, chatChan, initChan)
 	<-initChan
 	fmt.Println("[Module] 广播模组已加载")
 
 	//======================================================================================
 	initChan = make(chan struct{})
-	go StatusMonitor.StatusMonitor(sendChannel, TitleManager, initChan)
+	go StatusMonitor.StatusMonitor(sendChannel, initChan)
 	<-initChan
 	fmt.Println("[Module] 状态网络广播模组已加载")
 

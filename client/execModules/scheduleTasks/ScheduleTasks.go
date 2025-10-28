@@ -2,8 +2,7 @@ package scheduleTasks
 
 import (
 	"ScumBotServer/client/execModules"
-	"ScumBotServer/client/execModules/CommandSelecter"
-	"ScumBotServer/client/execModules/permissionBucket"
+	"ScumBotServer/client/execModules/Public"
 	"fmt"
 	"strconv"
 	"strings"
@@ -34,8 +33,8 @@ func iniLoader() *execModules.Config {
 	return cfg
 }
 
-func createPermissionBucket() *permissionBucket.Manager {
-	PmBucket, err := permissionBucket.NewManager("./db/ScheduleTasks.db")
+func createPermissionBucket() *Public.Manager {
+	PmBucket, err := Public.NewManager("./db/ScheduleTasks.db")
 	if err != nil {
 		panic(err)
 	}
@@ -53,7 +52,7 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	(*regCommand)["ScheduleTasks"] = commandList
 }
 
-func CommandHandler(ScheduleTasksChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *permissionBucket.Manager, chatChan chan string) {
+func CommandHandler(ScheduleTasksChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *Public.Manager, chatChan chan string) {
 	var commandLines []string
 	for command := range ScheduleTasksChan {
 		//chatChan <- fmt.Sprintf("%s 任务执行中 请耐心等待", command["nickName"].(string))
@@ -69,7 +68,7 @@ func CommandHandler(ScheduleTasksChan chan map[string]interface{}, cfg *execModu
 
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
-			cfglines := CommandSelecter.Selecter(command["steamID"].(string), cfgCommand)
+			cfglines := Public.Selecter(command["steamID"].(string), cfgCommand)
 			for _, lines := range cfglines {
 				chatChan <- lines
 				//fmt.Println("[ScheduleTasks-Module]:" + lines)
@@ -190,7 +189,7 @@ func TaskFunction(com string, ScheduleTasksChan chan map[string]interface{}) {
 	ScheduleTasksChan <- command
 }
 
-//var lw = PublicInterface.LogWatcher
+//var lw = Public.LogWatcher
 
 func ScheduleTasks(regCommand *map[string][]string, ScheduleTasksChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
 	cfg := iniLoader()

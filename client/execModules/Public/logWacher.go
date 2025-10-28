@@ -1,4 +1,4 @@
-package LogWacher
+package Public
 
 import (
 	"bufio"
@@ -168,7 +168,7 @@ func (lw *LogWatcher) GetPlayers() map[string]Player {
 	return copy
 }
 
-func RunLogWatcher(lw *LogWatcher, LWChan chan *LogWatcher, initChan chan struct{}) {
+func RunLogWatcher(initChan chan struct{}) {
 	// 日志文件路径
 	roamingPath := os.Getenv("AppData")
 	logFile := strings.Replace(roamingPath, `AppData\Roaming`, `AppData\Local\SCUM\Saved\Logs\SCUM.log`, 1)
@@ -177,29 +177,10 @@ func RunLogWatcher(lw *LogWatcher, LWChan chan *LogWatcher, initChan chan struct
 	rulesDir := "./ini/LogWatcher/"
 
 	// 创建 LogWatcher
-	lw = NewLogWatcher(logFile, 1*time.Second, rulesDir)
+	GlobalLogWatcher = NewLogWatcher(logFile, 1*time.Second, rulesDir)
 
 	// 开始监控日志
-	lw.Start()
-
-	LWChan <- lw
+	GlobalLogWatcher.Start()
 
 	close(initChan)
-	//close(LWChan)
-	//select {}
-	//close(initChan)
-	// 定时打印玩家列表
-	/*
-		ticker := time.NewTicker(5 * time.Second)
-		for range ticker.C {
-			players := lw.GetPlayers()
-			fmt.Println("=== 当前玩家列表 ===")
-			for _, p := range players {
-				fmt.Printf("Name: %s, SteamID: %s, Fame: %s, Account: %s, Gold: %s, Location: %s\n",
-					p.Name, p.SteamID, p.Fame, p.AccountBalance, p.GoldBalance, p.Location)
-			}
-			fmt.Println("===================")
-		}
-
-	*/
 }
