@@ -71,6 +71,8 @@ func Selecter(steamID string, cfgCommand string) []string {
 				}
 			}
 		}
+	case "ShutdownServer":
+		cfgChat = append(cfgChat, commandPrefix+"ShutdownServer pretty please")
 	default:
 		//fmt.Println("[ERROR-CommandSelecter]->Error:无法匹配命令 ", cmd)
 		cfgChat = append(cfgChat, cfgCommand)

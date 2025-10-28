@@ -1,0 +1,1 @@
+SpawnItem Psilocybe_Cyanescens 1 Location %s
