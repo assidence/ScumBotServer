@@ -5,14 +5,14 @@ cls
 echo 启动 SCUM 服务器监控脚本...
 
 
-start "" /b "D:\SteamLibrary\steamapps\common\SCUM Server\SCUM\Binaries\Win64\SCUMServer.exe" -log
+start "" /b "E:\Program Files (x86)\Steam\steamapps\common\SCUM Server\SCUM\Binaries\Win64\SCUMServer.exe" -log
 
 
 echo 等待 180 秒以启动 server.exe...
 timeout /t 180 /nobreak >nul
 
 
-start "" /b "F:\Project\Goland\ScumBotServer\server\server.exe" 20500 "D:\SteamLibrary\steamapps\common\SCUM Server\SCUM\Saved\SaveFiles\Logs"
+start "" /b "E:\MyProject\ScumBotServer\server\server.exe" 20500 "E:\Program Files (x86)\Steam\steamapps\common\SCUM Server\SCUM\Saved\SaveFiles\Logs"
 
 :WaitLoop
 

@@ -29,6 +29,9 @@ func SendOnline(sendChannel chan []byte) {
 	for steamId, _ := range onlinePlayer {
 		PlayerList = append(PlayerList, steamId)
 	}
+	if len(PlayerList) == 0 {
+		return
+	}
 	sendList := strings.Join(PlayerList, "-")
 	//fmt.Println("sendlist:", sendList)
 	execData["SteamIdList"] = sendList

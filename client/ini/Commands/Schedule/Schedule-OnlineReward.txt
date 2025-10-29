@@ -1,0 +1,2 @@
+AddOnlineCurrency 2000
+在线奖励：2000美元已发放

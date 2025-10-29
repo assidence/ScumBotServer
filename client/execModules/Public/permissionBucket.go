@@ -302,7 +302,7 @@ func (m *Manager) CanExecute(playerID, command string) (bool, string) {
 	}
 	// Prefix limit
 	if cfg.PrefixRequire != "" {
-		ok, _ := GlobalTitleManager.HasTitle(playerID, cfg.PrefixRequire)
+		ok, _ := GlobalTitleManager.PrefixHasTitle(playerID, cfg.PrefixRequire)
 		if !ok {
 			return false, fmt.Sprintf("[Permission] 执行此命令需要称号【%s】", cfg.PrefixRequire)
 		}
