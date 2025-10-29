@@ -38,6 +38,11 @@ func SendOnline(sendChannel chan []byte) {
 	//fmt.Println("execData:", execData)
 	jsonByte := sequenceJson(&execData)
 	sendChannel <- jsonByte
+
+	//让服务器停止无限的寻找
+	//execData["SteamIdList"] = ""
+	//jsonByte = sequenceJson(&execData)
+	//sendChannel <- jsonByte
 	//fmt.Println("[StatusMonitor-Module] 已广播在线玩家列表:", string(jsonByte))
 }
 
