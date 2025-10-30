@@ -75,7 +75,7 @@ try {
 }
 
 ; 每秒检测一次
-SetTimer(SCUM_Auto, 1000)
+SetTimer(SCUM_Auto, 5000)
 return
 
 SCUM_Auto(*) {
@@ -94,7 +94,7 @@ SCUM_Auto(*) {
 
         Click(winX + bx, winY + by)
         Log("💡 掉线 OK 已点击")
-        Sleep 500
+        Sleep 2000
         currentState := STATE_NORMAL
         return
 
@@ -107,7 +107,7 @@ SCUM_Auto(*) {
     ;Sleep 2000
     if continuebtnExist {
         Log("ImageSearch continueButton detected!"  ", bx=" bx ", by=" by)
-        Sleep 500
+        Sleep 200
         Click(winX + bx, winY + by)
         Log("▶️ 继续游戏 已点击")
         currentState := STATE_LOADING
@@ -116,17 +116,17 @@ SCUM_Auto(*) {
 
     ; ========================
     ; 3️⃣ 游戏加载完成检测
-    color:= PixelGetColor(loadCheckX, loadCheckY)
-    gameLoaded := color != loadCheckColor
+    ;color:= PixelGetColor(loadCheckX, loadCheckY)
+    ;gameLoaded := color != loadCheckColor
     ;Sleep 2000
-    if !gameLoaded {
-        currentState := STATE_LOADING
-        Log("PixelGetColor loadCheck: color=" color ", gameLoaded=" gameLoaded)
-        return
-    } else {
-        currentState := STATE_CHAT
-        Log("PixelGetColor loadCheck: color=" color ", gameLoaded=" gameLoaded)
-    }
+    ;if !gameLoaded {
+        ;currentState := STATE_LOADING
+        ;Log("PixelGetColor loadCheck: color=" color ", gameLoaded=" gameLoaded)
+        ;return
+    ;} else {
+        ;currentState := STATE_CHAT
+        ;Log("PixelGetColor loadCheck: color=" color ", gameLoaded=" gameLoaded)
+    ;}
 
     ; ========================
     ; 4️⃣ 聊天栏检测
@@ -136,10 +136,13 @@ SCUM_Auto(*) {
     needSwitchChat := 0
     if !chatExists {
         Log("ImageSearch chatIcon not found!" "chatExists=" chatExists)
-        Click(winX + 10, winY + 10)
-        Sleep 500
+        ;Click(winX + 10, winY + 10)
+        Sleep 2000
         Send "t"
         Log("💬 聊天栏不存在，已按 T")
+        Sleep 2000
+        Click(winx+chatColorX-100,winy+chatColorY)
+        Log("💬 聊天栏已点击")
         needSwitchChat := 1
     }
 
@@ -170,20 +173,30 @@ SCUM_Auto(*) {
             targetIndex := A_Index
         }
         Log("当前循环" String(A_Index) "蓝色值：" String(maxBlue) "记录频道：" String(targetIndex))
+        Sleep 2000
         Send "{Tab}"
-        Sleep 500
     }
 
-    Log("最蓝的频道是第" targetIndex "个，蓝色值：" string(maxBlue))
+    if targetIndex ==0{
+        Log("颜色识别错误 目标频道为0")
+    }
+
+    Log("最蓝的频道是第" String(targetIndex) "个，蓝色值：" string(maxBlue))
 
     ; 自动切换到目标频道
     ; 假设当前频道从 1 开始，用 Tab 循环
     currentIndex := 1
     while (currentIndex != targetIndex) {
+        if targetIndex == 0{
+            return
+        }
         Log("当前频道:" String(currentIndex) "目标频道:" String(targetIndex))
         Send "{Tab}"
-        Sleep 500
+        Sleep 2000
         currentIndex := currentIndex + 1
+        if currentIndex >3{
+            return
+        }
     }
     needSwitchChat := 0
     Log("✅ SCUM 自动检测完成")
