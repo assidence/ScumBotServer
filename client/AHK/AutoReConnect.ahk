@@ -179,6 +179,7 @@ SCUM_Auto(*) {
 
     if targetIndex ==0{
         Log("颜色识别错误 目标频道为0")
+        return
     }
 
     Log("最蓝的频道是第" String(targetIndex) "个，蓝色值：" string(maxBlue))
