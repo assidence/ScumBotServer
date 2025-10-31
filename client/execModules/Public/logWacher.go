@@ -48,21 +48,23 @@ type LogWatcher struct {
 	rules    []Rule
 	lastMod  time.Time
 
-	lastOffset int64
-	mu         sync.Mutex
-	Players    map[string]Player
-	Vehicles   map[string][]string
+	lastOffset       int64
+	mu               sync.Mutex
+	Players          map[string]Player
+	PlayersResetTime time.Duration
+	Vehicles         map[string][]string
 }
 
 // NewLogWatcher 创建实例
 func NewLogWatcher(filePath string, interval time.Duration, rulesDir string) *LogWatcher {
 	lw := &LogWatcher{
-		FilePath:   filePath,
-		Interval:   interval,
-		rulesDir:   rulesDir,
-		Players:    make(map[string]Player),
-		Vehicles:   make(map[string][]string),
-		lastOffset: 0,
+		FilePath:         filePath,
+		Interval:         interval,
+		rulesDir:         rulesDir,
+		Players:          make(map[string]Player),
+		PlayersResetTime: 60 * time.Second,
+		Vehicles:         make(map[string][]string),
+		lastOffset:       0,
 	}
 	lw.loadRules()
 	//go lw.autoReloadRules()
@@ -109,6 +111,14 @@ func (lw *LogWatcher) Start() {
 			lw.lastOffset, _ = file.Seek(0, 1)
 			file.Close()
 			time.Sleep(lw.Interval)
+			lw.mu.Lock()
+			lw.PlayersResetTime -= lw.Interval
+			if lw.PlayersResetTime <= 0 {
+				tempPlayers := make(map[string]Player)
+				lw.Players = tempPlayers
+				lw.PlayersResetTime = 60 * time.Second
+			}
+			lw.mu.Unlock()
 			//fmt.Println("[LogWatcher]已更新读取")
 		}
 	}()
@@ -142,6 +152,10 @@ func (lw *LogWatcher) parseBlock(block []string) {
 						LocationZ:      match[8],
 					}
 					tempPlayers[player.SteamID] = player
+					lw.mu.Lock()
+					lw.Players = tempPlayers
+					lw.PlayersResetTime = 60 * time.Second
+					lw.mu.Unlock()
 					//fmt.Println("[LogWatcher] 捕获玩家：", match[1])
 				}
 				if len(match) == 3 {
@@ -149,9 +163,6 @@ func (lw *LogWatcher) parseBlock(block []string) {
 					fmt.Println("[LogWatcher] 捕获载具生成：", match[1], match[2])
 				}
 			}
-			lw.mu.Lock()
-			lw.Players = tempPlayers
-			lw.mu.Unlock()
 		}
 	}
 }
@@ -161,11 +172,11 @@ func (lw *LogWatcher) GetPlayers() map[string]Player {
 	lw.mu.Lock()
 	defer lw.mu.Unlock()
 
-	copy := make(map[string]Player, len(lw.Players))
+	c := make(map[string]Player, len(lw.Players))
 	for k, v := range lw.Players {
-		copy[k] = v
+		c[k] = v
 	}
-	return copy
+	return c
 }
 
 func RunLogWatcher(initChan chan struct{}) {
