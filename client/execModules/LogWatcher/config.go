@@ -1,4 +1,4 @@
-package Public
+package LogWatcher
 
 import (
 	"fmt"

@@ -7,8 +7,8 @@ import (
 	"ScumBotServer/client/execModules/CommandSelecter"
 	"ScumBotServer/client/execModules/DidiCar"
 	"ScumBotServer/client/execModules/Kits"
+	"ScumBotServer/client/execModules/LogWatcher"
 	"ScumBotServer/client/execModules/Prefix"
-	"ScumBotServer/client/execModules/Public"
 	"ScumBotServer/client/execModules/StatusMonitor"
 	"ScumBotServer/client/execModules/scheduleTasks"
 	"fmt"
@@ -42,7 +42,7 @@ func moduleInit(regCommand *map[string][]string, sendChannel chan []byte) {
 	fmt.Println("[Module] 游戏命令翻译器已加载")
 
 	initChan = make(chan struct{})
-	go Public.RunLogWatcher(initChan)
+	go LogWatcher.RunLogWatcher(initChan)
 	<-initChan
 	fmt.Println("[Module] 客户端日志监控模组已加载")
 

@@ -7,21 +7,17 @@ import (
 )
 
 func Selecter(steamID string, cfgCommand string) []string {
-	if Public.GlobalLogWatcher == nil {
-		fmt.Println("[CommandSelecter-Panic] LogWatcher is nil")
-		return nil
-	}
 	commandPrefix := "#"
 	re := regexp.MustCompile(`^\w+`)
 	cmd := re.FindString(cfgCommand)
 	var cfgChat []string
 	switch cmd {
 	case "DestroyDiDi":
-		if Public.GlobalLogWatcher.Vehicles["BPC_Dirtbike"] == nil {
+		if Public.LogWatcherInterface.Vehicles["BPC_Dirtbike"] == nil {
 			cfgChat = append(cfgChat, fmt.Sprintf("找不到%s车辆类型的id列表", "BPC_Dirtbike"))
 
 		}
-		for _, vehicleID := range Public.GlobalLogWatcher.Vehicles["BPC_Dirtbike"] {
+		for _, vehicleID := range Public.LogWatcherInterface.Vehicles["BPC_Dirtbike"] {
 			cfgChat = append(cfgChat, fmt.Sprintf("%sDestroyVehicle %s", commandPrefix, vehicleID))
 		}
 	case "SpawnItem":
@@ -29,26 +25,26 @@ func Selecter(steamID string, cfgCommand string) []string {
 	case "ChangeCurrencyBalance":
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID))
 	case "SpawnVehicle":
-		PLocationX := Public.GlobalLogWatcher.Players[steamID].LocationX
-		PLocationY := Public.GlobalLogWatcher.Players[steamID].LocationY
-		PLocationZ := Public.GlobalLogWatcher.Players[steamID].LocationZ
+		PLocationX := Public.LogWatcherInterface.Players[steamID].LocationX
+		PLocationY := Public.LogWatcherInterface.Players[steamID].LocationY
+		PLocationZ := Public.LogWatcherInterface.Players[steamID].LocationZ
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, PLocationX, PLocationY, PLocationZ))
 	case "ListPlayers":
 		cfgChat = append(cfgChat, commandPrefix+cfgCommand)
 	case "SetFakeName":
 		var nickName string
-		if Public.GlobalLogWatcher.Players[steamID].Prefix != "" {
-			nickName = fmt.Sprintf("-★%s★-%s", Public.GlobalLogWatcher.Players[steamID].Prefix, Public.GlobalLogWatcher.Players[steamID].Name)
+		if Public.LogWatcherInterface.Players[steamID].Prefix != "" {
+			nickName = fmt.Sprintf("-★%s★-%s", Public.LogWatcherInterface.Players[steamID].Prefix, Public.LogWatcherInterface.Players[steamID].Name)
 		} else {
 			fmt.Println("CommandSelecter:")
 			//fmt.Println(lw.Players[steamID])
-			nickName = Public.GlobalLogWatcher.Players[steamID].Name
+			nickName = Public.LogWatcherInterface.Players[steamID].Name
 		}
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID, nickName))
 	case "Teleport":
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID))
 	case "AchievementRewardItem":
-		OnlinePlayers := Public.GlobalLogWatcher.GetPlayers()
+		OnlinePlayers := Public.LogWatcherInterface.GetPlayers()
 		for steamid, _ := range OnlinePlayers {
 			if steamid == "" {
 				continue
@@ -70,7 +66,7 @@ func Selecter(steamID string, cfgCommand string) []string {
 		re := regexp.MustCompile(`AddOnlineCurrency (\d+)`)
 		// 替换为 ChangeCurrencyBalance Normal 数字 %s
 		output := re.ReplaceAllString(cfgCommand, "ChangeCurrencyBalance Normal $1 %s")
-		OnlinePlayers := Public.GlobalLogWatcher.GetPlayers()
+		OnlinePlayers := Public.LogWatcherInterface.GetPlayers()
 		for steamid, _ := range OnlinePlayers {
 			cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(output, steamid))
 		}

@@ -1,6 +1,7 @@
-package Public
+package LogWatcher
 
 import (
+	"ScumBotServer/client/execModules/Public"
 	"bufio"
 	"fmt"
 	"os"
@@ -10,27 +11,7 @@ import (
 	"time"
 )
 
-// Player 玩家信息
-type Player struct {
-	SteamID        string
-	Name           string
-	Fame           string
-	AccountBalance string
-	GoldBalance    string
-	LocationX      string
-	LocationY      string
-	LocationZ      string
-	Prefix         string
-}
-
-// Vehicle 载具信息
-/*
-type Vehicle struct {
-	VehicleType string
-	VehicleID   string
-}
-
-*/
+type Player = Public.Player
 
 // Rule 单条匹配规则
 type Rule struct {
@@ -119,6 +100,7 @@ func (lw *LogWatcher) Start() {
 				lw.PlayersResetTime = 60 * time.Second
 			}
 			lw.mu.Unlock()
+			lw.PhasePlayerToInterface()
 			//fmt.Println("[LogWatcher]已更新读取")
 		}
 	}()
@@ -156,11 +138,13 @@ func (lw *LogWatcher) parseBlock(block []string) {
 					lw.Players = tempPlayers
 					lw.PlayersResetTime = 60 * time.Second
 					lw.mu.Unlock()
+					lw.PhasePlayerToInterface()
 					//fmt.Println("[LogWatcher] 捕获玩家：", match[1])
 				}
 				if len(match) == 3 {
 					lw.Vehicles[match[1]] = append(lw.Vehicles[match[1]], match[2])
-					fmt.Println("[LogWatcher] 捕获载具生成：", match[1], match[2])
+					lw.PhaseVehicleToInterface()
+					//fmt.Println("[LogWatcher] 捕获载具生成：", match[1], match[2])
 				}
 			}
 		}
@@ -179,6 +163,18 @@ func (lw *LogWatcher) GetPlayers() map[string]Player {
 	return c
 }
 
+func (lw *LogWatcher) PhasePlayerToInterface() {
+	Public.LogWatcherInterface.Mu.Lock()
+	defer Public.LogWatcherInterface.Mu.Unlock()
+	Public.LogWatcherInterface.Players = lw.Players
+}
+
+func (lw *LogWatcher) PhaseVehicleToInterface() {
+	Public.LogWatcherInterface.Mu.Lock()
+	defer Public.LogWatcherInterface.Mu.Unlock()
+	Public.LogWatcherInterface.Vehicles = lw.Vehicles
+}
+
 func RunLogWatcher(initChan chan struct{}) {
 	// 日志文件路径
 	roamingPath := os.Getenv("AppData")
@@ -188,10 +184,11 @@ func RunLogWatcher(initChan chan struct{}) {
 	rulesDir := "./ini/LogWatcher/"
 
 	// 创建 LogWatcher
-	GlobalLogWatcher = NewLogWatcher(logFile, 1*time.Second, rulesDir)
+	lw := NewLogWatcher(logFile, 1*time.Second, rulesDir)
 
 	// 开始监控日志
-	GlobalLogWatcher.Start()
+	lw.Start()
+	Public.LogWatcherInterface.GetPlayers = lw.GetPlayers
 
 	close(initChan)
 }

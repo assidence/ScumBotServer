@@ -65,48 +65,44 @@ func (m *TitleManager) PrefixInitDB() error {
 
 // PrefixListenCommands 监听来自其他模块的指令
 func (m *TitleManager) PrefixListenCommands(chatChan chan string) {
-	if Public.GlobalLogWatcher == nil {
-		fmt.Println("[Prefix-Panic] LogWatcher is nil")
-		return
-	}
 	defer m.wg.Done()
 	for cmd := range m.CmdCh {
 		switch cmd.Command {
 		case CommandGrant:
 			if err := m.PrefixGrantTitle(cmd.UserID, cmd.Title); err != nil {
-				chatChan <- fmt.Sprintf("%s授予称号失败: %v", Public.GlobalLogWatcher.Players[cmd.UserID].Name, err)
+				chatChan <- fmt.Sprintf("%s授予称号失败: %v", Public.LogWatcherInterface.Players[cmd.UserID].Name, err)
 				fmt.Println("[Error-Prefix] " + fmt.Sprintf("%s授予称号失败: %v", cmd.UserID, err))
 			} else {
-				chatChan <- fmt.Sprintf("%s获得称号 %s", Public.GlobalLogWatcher.Players[cmd.UserID].Name, cmd.Title)
+				chatChan <- fmt.Sprintf("%s获得称号 %s", Public.LogWatcherInterface.Players[cmd.UserID].Name, cmd.Title)
 				fmt.Printf("[Prefix-Module]  玩家 %s 获得称号 %s\n", cmd.UserID, cmd.Title)
 			}
 
 		case CommandRemove:
 			if err := m.PrefixRemoveTitle(cmd.UserID, cmd.Title); err != nil {
-				chatChan <- fmt.Sprintf("%s移除称号失败: %v", Public.GlobalLogWatcher.Players[cmd.UserID].Name, err)
+				chatChan <- fmt.Sprintf("%s移除称号失败: %v", Public.LogWatcherInterface.Players[cmd.UserID].Name, err)
 				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] %s移除称号失败: %v", cmd.UserID, err))
 			} else {
-				chatChan <- fmt.Sprintf("玩家 %s 移除称号 %s", Public.GlobalLogWatcher.Players[cmd.UserID].Name, cmd.Title)
+				chatChan <- fmt.Sprintf("玩家 %s 移除称号 %s", Public.LogWatcherInterface.Players[cmd.UserID].Name, cmd.Title)
 				fmt.Printf("[Prefix-Module] 玩家 %s 移除称号 %s\n", cmd.UserID, cmd.Title)
 			}
 
 		case CommandSet:
 			if err := m.PrefixSetActiveTitle(cmd.UserID, cmd.Title); err != nil {
-				chatChan <- fmt.Sprintf("%s设置当前称号失败: %v", Public.GlobalLogWatcher.Players[cmd.UserID].Name, err)
+				chatChan <- fmt.Sprintf("%s设置当前称号失败: %v", Public.LogWatcherInterface.Players[cmd.UserID].Name, err)
 				fmt.Printf("[Error-Prefix] 玩家 %s设置当前称号失败: %v\n", cmd.UserID, err)
 			} else {
-				p := Public.GlobalLogWatcher.Players[cmd.UserID]
+				p := Public.LogWatcherInterface.Players[cmd.UserID]
 				p.Prefix = cmd.Title
-				Public.GlobalLogWatcher.Players[cmd.UserID] = p
+				Public.LogWatcherInterface.Players[cmd.UserID] = p
 				line := fmt.Sprintf("#SetFakeName %s -★%s★-%s", cmd.UserID, cmd.Title, p.Name)
 				chatChan <- line
 				chatChan <- fmt.Sprintf("%s当前称号设为 %s 可使用@隐藏称号 来取消", p.Name, cmd.Title)
 				fmt.Println("[Prefix-Module]:" + line)
 			}
 		case CommandUnSet:
-			p := Public.GlobalLogWatcher.Players[cmd.UserID]
+			p := Public.LogWatcherInterface.Players[cmd.UserID]
 			p.Prefix = ""
-			Public.GlobalLogWatcher.Players[cmd.UserID] = p
+			Public.LogWatcherInterface.Players[cmd.UserID] = p
 			line := fmt.Sprintf("#SetFakeName %s %s", cmd.UserID, p.Name)
 			chatChan <- line
 			chatChan <- fmt.Sprintf("%s当前称号已取消展示", p.Name)

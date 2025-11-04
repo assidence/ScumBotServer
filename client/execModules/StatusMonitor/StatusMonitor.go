@@ -3,7 +3,6 @@ package StatusMonitor
 import (
 	"ScumBotServer/client/execModules/Public"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 )
@@ -15,15 +14,11 @@ func sequenceJson(execData *map[string]interface{}) []byte {
 }
 
 func SendOnline(sendChannel chan []byte) {
-	if Public.GlobalLogWatcher == nil {
-		fmt.Println("[StatusMonitor-Panic] LogWatcher is nil")
-		return
-	}
 	var execData = map[string]interface{}{
 		"type":        "onlinePlayers",
 		"SteamIdList": "",
 	}
-	onlinePlayer := Public.GlobalLogWatcher.GetPlayers()
+	onlinePlayer := Public.LogWatcherInterface.GetPlayers()
 	//fmt.Println("GetPlayers:", onlinePlayer)
 	PlayerList := []string{}
 	for steamId, _ := range onlinePlayer {
