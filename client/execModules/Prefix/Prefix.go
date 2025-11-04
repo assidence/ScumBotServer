@@ -1,7 +1,8 @@
-package Public
+package Prefix
 
 import (
 	"ScumBotServer/client/execModules"
+	"ScumBotServer/client/execModules/Public"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -9,24 +10,6 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 )
-
-// TitleCommandType 指令类型
-type TitleCommandType string
-
-const (
-	CommandGrant  TitleCommandType = "@给予称号" // 授予称号
-	CommandRemove TitleCommandType = "@移除称号" // 移除称号
-	CommandSet    TitleCommandType = "@设置称号" // 设置当前称号
-	CommandUnSet  TitleCommandType = "@隐藏称号"
-)
-
-// TitleCommand 外部模块发送过来的指令
-type TitleCommand struct {
-	UserID  string
-	Command TitleCommandType
-	Title   string
-	Done    chan struct{}
-}
 
 // PlayerTitle 玩家称号记录
 type PlayerTitle struct {
@@ -53,7 +36,7 @@ func PrefixNewTitleManager(dbPath string, chatChan chan string) (*TitleManager, 
 
 	manager := &TitleManager{
 		db:    db,
-		CmdCh: make(chan TitleCommand, 64),
+		CmdCh: Public.TitleInterface.CmdCh,
 	}
 
 	if err := manager.PrefixInitDB(); err != nil {
@@ -82,7 +65,7 @@ func (m *TitleManager) PrefixInitDB() error {
 
 // PrefixListenCommands 监听来自其他模块的指令
 func (m *TitleManager) PrefixListenCommands(chatChan chan string) {
-	if GlobalLogWatcher == nil {
+	if Public.GlobalLogWatcher == nil {
 		fmt.Println("[Prefix-Panic] LogWatcher is nil")
 		return
 	}
@@ -91,39 +74,39 @@ func (m *TitleManager) PrefixListenCommands(chatChan chan string) {
 		switch cmd.Command {
 		case CommandGrant:
 			if err := m.PrefixGrantTitle(cmd.UserID, cmd.Title); err != nil {
-				chatChan <- fmt.Sprintf("%s授予称号失败: %v", GlobalLogWatcher.Players[cmd.UserID].Name, err)
+				chatChan <- fmt.Sprintf("%s授予称号失败: %v", Public.GlobalLogWatcher.Players[cmd.UserID].Name, err)
 				fmt.Println("[Error-Prefix] " + fmt.Sprintf("%s授予称号失败: %v", cmd.UserID, err))
 			} else {
-				chatChan <- fmt.Sprintf("%s获得称号 %s", GlobalLogWatcher.Players[cmd.UserID].Name, cmd.Title)
+				chatChan <- fmt.Sprintf("%s获得称号 %s", Public.GlobalLogWatcher.Players[cmd.UserID].Name, cmd.Title)
 				fmt.Printf("[Prefix-Module]  玩家 %s 获得称号 %s\n", cmd.UserID, cmd.Title)
 			}
 
 		case CommandRemove:
 			if err := m.PrefixRemoveTitle(cmd.UserID, cmd.Title); err != nil {
-				chatChan <- fmt.Sprintf("%s移除称号失败: %v", GlobalLogWatcher.Players[cmd.UserID].Name, err)
+				chatChan <- fmt.Sprintf("%s移除称号失败: %v", Public.GlobalLogWatcher.Players[cmd.UserID].Name, err)
 				fmt.Println("[Error-Prefix]" + fmt.Sprintf("[Error-Prefix] %s移除称号失败: %v", cmd.UserID, err))
 			} else {
-				chatChan <- fmt.Sprintf("玩家 %s 移除称号 %s", GlobalLogWatcher.Players[cmd.UserID].Name, cmd.Title)
+				chatChan <- fmt.Sprintf("玩家 %s 移除称号 %s", Public.GlobalLogWatcher.Players[cmd.UserID].Name, cmd.Title)
 				fmt.Printf("[Prefix-Module] 玩家 %s 移除称号 %s\n", cmd.UserID, cmd.Title)
 			}
 
 		case CommandSet:
 			if err := m.PrefixSetActiveTitle(cmd.UserID, cmd.Title); err != nil {
-				chatChan <- fmt.Sprintf("%s设置当前称号失败: %v", GlobalLogWatcher.Players[cmd.UserID].Name, err)
+				chatChan <- fmt.Sprintf("%s设置当前称号失败: %v", Public.GlobalLogWatcher.Players[cmd.UserID].Name, err)
 				fmt.Printf("[Error-Prefix] 玩家 %s设置当前称号失败: %v\n", cmd.UserID, err)
 			} else {
-				p := GlobalLogWatcher.Players[cmd.UserID]
+				p := Public.GlobalLogWatcher.Players[cmd.UserID]
 				p.Prefix = cmd.Title
-				GlobalLogWatcher.Players[cmd.UserID] = p
+				Public.GlobalLogWatcher.Players[cmd.UserID] = p
 				line := fmt.Sprintf("#SetFakeName %s -★%s★-%s", cmd.UserID, cmd.Title, p.Name)
 				chatChan <- line
 				chatChan <- fmt.Sprintf("%s当前称号设为 %s 可使用@隐藏称号 来取消", p.Name, cmd.Title)
 				fmt.Println("[Prefix-Module]:" + line)
 			}
 		case CommandUnSet:
-			p := GlobalLogWatcher.Players[cmd.UserID]
+			p := Public.GlobalLogWatcher.Players[cmd.UserID]
 			p.Prefix = ""
-			GlobalLogWatcher.Players[cmd.UserID] = p
+			Public.GlobalLogWatcher.Players[cmd.UserID] = p
 			line := fmt.Sprintf("#SetFakeName %s %s", cmd.UserID, p.Name)
 			chatChan <- line
 			chatChan <- fmt.Sprintf("%s当前称号已取消展示", p.Name)
@@ -273,7 +256,7 @@ func PrefixCommandHandler(PrefixChan chan map[string]interface{}, cfg *execModul
 		if cfg.Data[commandString]["PrefixRequire"].(string) != "default" {
 			var1 := command["steamID"].(string)
 			var2 := cfg.Data[commandString]["PrefixRequire"].(string)
-			ok, _ := GlobalTitleManager.PrefixHasTitle(var1, var2)
+			ok, _ := TitleMgr.PrefixHasTitle(var1, var2)
 			if !ok {
 				chatChan <- fmt.Sprintf("[Permission] 执行此命令需要称号【%s】", cfg.Data[commandString]["PrefixRequire"].(string))
 				continue
@@ -287,11 +270,11 @@ func PrefixCommandHandler(PrefixChan chan map[string]interface{}, cfg *execModul
 		}
 
 		Done := make(chan struct{})
-		GlobalTitleManager.CmdCh <- TitleCommand{UserID: commandArgs[1], Command: TitleCommandType(commandString), Title: commandArgs[0], Done: Done}
+		TitleMgr.CmdCh <- TitleCommand{UserID: commandArgs[1], Command: TitleCommandType(commandString), Title: commandArgs[0], Done: Done}
 		<-Done
 		commandLines = cfg.Data[commandString]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
-			cfglines := Selecter(command["steamID"].(string), cfgCommand)
+			cfglines := Public.CommandSelecterInterface.Selecter(command["steamID"].(string), cfgCommand)
 			for _, lines := range cfglines {
 				chatChan <- lines
 				fmt.Println("[Prefix-Module]:" + lines)
@@ -300,11 +283,26 @@ func PrefixCommandHandler(PrefixChan chan map[string]interface{}, cfg *execModul
 	}
 }
 
+var TitleMgr *TitleManager
+
 // Prefix 启动入口
 func Prefix(regCommand *map[string][]string, PrefixChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
 	cfg := PrefixIniLoader()
 	PrefixCommandRegister(cfg, regCommand)
-	GlobalTitleManager, _ = PrefixNewTitleManager("./db/Prefix.db", chatChan)
+	TitleMgr, _ = PrefixNewTitleManager("./db/Prefix.db", chatChan)
+	Public.TitleInterface.PrefixHasTitle = TitleMgr.PrefixHasTitle
+	Public.TitleInterface.PrefixGetActiveTitle = TitleMgr.PrefixGetActiveTitle
 	go PrefixCommandHandler(PrefixChan, cfg, chatChan)
 	close(initChan)
 }
+
+// 在 Prefix 包中直接定义别名
+type TitleCommand = Public.TitleCommand
+type TitleCommandType = Public.TitleCommandType
+
+const (
+	CommandGrant  = Public.CommandGrant
+	CommandRemove = Public.CommandRemove
+	CommandSet    = Public.CommandSet
+	CommandUnSet  = Public.CommandUnSet
+)

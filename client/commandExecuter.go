@@ -2,9 +2,12 @@ package main
 
 import (
 	"ScumBotServer/client/execModules"
+	"ScumBotServer/client/execModules/Achievement"
 	"ScumBotServer/client/execModules/Announcer"
+	"ScumBotServer/client/execModules/CommandSelecter"
 	"ScumBotServer/client/execModules/DidiCar"
 	"ScumBotServer/client/execModules/Kits"
+	"ScumBotServer/client/execModules/Prefix"
 	"ScumBotServer/client/execModules/Public"
 	"ScumBotServer/client/execModules/StatusMonitor"
 	"ScumBotServer/client/execModules/scheduleTasks"
@@ -27,10 +30,16 @@ var chatChan = make(chan string, 100)
 
 // moduleInit initiation the command function module
 func moduleInit(regCommand *map[string][]string, sendChannel chan []byte) {
+
 	var initChan = make(chan struct{})
 	go commandSendToChat(initChan)
 	<-initChan
 	fmt.Println("[Module] 命令执行器已加载")
+
+	initChan = make(chan struct{})
+	go CommandSelecter.InitPublicSelecter(initChan)
+	<-initChan
+	fmt.Println("[Module] 游戏命令翻译器已加载")
 
 	initChan = make(chan struct{})
 	go Public.RunLogWatcher(initChan)
@@ -38,12 +47,12 @@ func moduleInit(regCommand *map[string][]string, sendChannel chan []byte) {
 	fmt.Println("[Module] 客户端日志监控模组已加载")
 
 	initChan = make(chan struct{})
-	go Public.Prefix(regCommand, PrefixChan, chatChan, initChan)
+	go Prefix.Prefix(regCommand, PrefixChan, chatChan, initChan)
 	<-initChan
 	fmt.Println("[Module] 称号模组已加载")
 
 	initChan = make(chan struct{})
-	go Public.AchievementModule(regCommand, AchievementChan, chatChan, initChan)
+	go Achievement.AchievementModule(regCommand, AchievementChan, chatChan, initChan)
 	<-initChan
 	fmt.Println("[Module] 成就模组已加载")
 

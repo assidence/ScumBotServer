@@ -1,7 +1,8 @@
-package Public
+package Achievement
 
 import (
 	"ScumBotServer/client/execModules"
+	"ScumBotServer/client/execModules/Public"
 	"bufio"
 	"database/sql"
 	"fmt"
@@ -242,10 +243,6 @@ func (r *BehaviorRecorder) AchievementCheckAchievements(steamID string, achievem
 
 // 执行奖励
 func (r *BehaviorRecorder) AchievementUnlockAchievement(steamID string, achv Achievement, chatChan chan string) {
-	if GlobalTitleManager == nil {
-		fmt.Println("[Achievement-Panic] TitleManager is null")
-		return
-	}
 	_, err := r.db.Exec(`INSERT INTO player_achievements (steam_id, achievement_name) VALUES (?, ?)`, steamID, achv.Name)
 	if err != nil {
 		return
@@ -253,15 +250,15 @@ func (r *BehaviorRecorder) AchievementUnlockAchievement(steamID string, achv Ach
 
 	if achv.RewardTitle != "" {
 		Done := make(chan struct{})
-		GlobalTitleManager.CmdCh <- TitleCommand{UserID: steamID, Command: TitleCommandType("@给予称号"), Title: achv.RewardTitle, Done: Done}
+		Public.TitleInterface.CmdCh <- Public.TitleCommand{UserID: steamID, Command: "@给予称号", Title: achv.RewardTitle, Done: Done}
 		<-Done
 		Done = make(chan struct{})
-		GlobalTitleManager.CmdCh <- TitleCommand{UserID: steamID, Command: TitleCommandType("@设置称号"), Title: achv.RewardTitle, Done: Done}
+		Public.TitleInterface.CmdCh <- Public.TitleCommand{UserID: steamID, Command: "@设置称号", Title: achv.RewardTitle, Done: Done}
 		<-Done
 	}
 
 	for _, cmd := range achv.RewardCommandLines {
-		cfglines := Selecter(steamID, cmd)
+		cfglines := Public.CommandSelecterInterface.Selecter(steamID, cmd)
 		for _, lines := range cfglines {
 			chatChan <- lines
 			fmt.Println("[Achievement-Module]:" + lines)
@@ -289,7 +286,7 @@ func AchievementRecordSelecter(steamID string, action string, target string, tar
 
 // ------------------------ 命令处理 ------------------------
 
-func AchievementCommandHandler(AchievementChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *Manager, chatChan chan string, recorder *BehaviorRecorder, achv []Achievement) {
+func AchievementCommandHandler(AchievementChan chan map[string]interface{}, cfg *execModules.Config, PMbucket *Public.Manager, chatChan chan string, recorder *BehaviorRecorder, achv []Achievement) {
 	for command := range AchievementChan {
 		steamID := command["steamID"].(string)
 		cmdName := command["command"].(string)
@@ -306,7 +303,7 @@ func AchievementCommandHandler(AchievementChan chan map[string]interface{}, cfg 
 
 		commandLines := cfg.Data[cmdName]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
-			cfglines := Selecter(commandArgs[0], cfgCommand)
+			cfglines := Public.CommandSelecterInterface.Selecter(commandArgs[0], cfgCommand)
 			for _, lines := range cfglines {
 				chatChan <- lines
 				fmt.Println("[Achievement-Module]:" + lines)
@@ -314,6 +311,13 @@ func AchievementCommandHandler(AchievementChan chan map[string]interface{}, cfg 
 		}
 	}
 	defer PMbucket.Close()
+}
+
+// -------------------传输成就信息到公共接口--------------------
+func PhaseAchievementDetailsToGlobalInterface(ArchList []Achievement) {
+	for _, A := range ArchList {
+		Public.AchievementInterface.AchievementReward[A.Name] = A.RewardCommandLines
+	}
 }
 
 // ------------------------ 模块入口 ------------------------
@@ -326,7 +330,8 @@ func AchievementModule(regCommand *map[string][]string, AchievementChan chan map
 
 	recorder := AchievementNewBehaviorRecorder()
 	achievements, _ := AchievementLoadAchievements("./ini/Achievement-gold.ini")
-	GlobalAchievements = &achievements
+	PhaseAchievementDetailsToGlobalInterface(achievements)
+	//Public.GlobalAchievements = &achievements
 
 	go func() {
 		AchievementCommandHandler(AchievementChan, cfg, PmBucket, chatChan, recorder, achievements)
@@ -348,8 +353,8 @@ func AchievementCommandRegister(cfg *execModules.Config, regCommand *map[string]
 
 // ------------------------ 权限管理器 ------------------------
 
-func AchievementcreatePermissionBucket() *Manager {
-	PmBucket, err := NewManager("./db/Achievement-Perm.db")
+func AchievementcreatePermissionBucket() *Public.Manager {
+	PmBucket, err := Public.NewManager("./db/Achievement-Perm.db")
 	if err != nil {
 		panic(err)
 	}

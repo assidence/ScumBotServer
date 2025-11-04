@@ -65,7 +65,7 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
-			cfglines := Public.Selecter(command["steamID"].(string), cfgCommand)
+			cfglines := Public.CommandSelecterInterface.Selecter(command["steamID"].(string), cfgCommand)
 			for _, lines := range cfglines {
 				chatChan <- lines
 				fmt.Println("[Kits-Module]:" + lines)

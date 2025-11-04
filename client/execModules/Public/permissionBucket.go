@@ -270,10 +270,6 @@ func (m *Manager) loadAllBucketsFromDB() error {
 // CanExecute 检查玩家是否可执行某命令（基于 CoolDown / DailyLimit / TotalLimit）
 func (m *Manager) CanExecute(playerID, command string) (bool, string) {
 	//TitleManager := Public.TitleManager
-	if GlobalTitleManager == nil {
-		fmt.Println("[PermissionBucket-Panic] TitleManager is null")
-		return false, "[Permission] TitleManager 未初始化"
-	}
 	m.mu.RLock()
 	//fmt.Println("PermissionConfigs:")
 	//fmt.Println(m.configs[command])
@@ -302,7 +298,7 @@ func (m *Manager) CanExecute(playerID, command string) (bool, string) {
 	}
 	// Prefix limit
 	if cfg.PrefixRequire != "" {
-		ok, _ := GlobalTitleManager.PrefixHasTitle(playerID, cfg.PrefixRequire)
+		ok, _ := TitleInterface.PrefixHasTitle(playerID, cfg.PrefixRequire)
 		if !ok {
 			return false, fmt.Sprintf("[Permission] 执行此命令需要称号【%s】", cfg.PrefixRequire)
 		}
