@@ -31,6 +31,13 @@ func EconomyCommandSender(EconomyCommand *chan *Utf16tail.Line, ecoch chan strin
 	}
 }
 
+func KillCommandSender(KillCommand *chan *Utf16tail.Line, killch chan string) {
+	for line := range *KillCommand {
+		killch <- line.Text
+		//fmt.Printf("[Network] Broadcast:\n", line.Text)
+	}
+}
+
 // 客户端信息分流器
 func IncomeMessagesSelector(imcomech chan IMServer2.Message, DBWincomech chan map[string]interface{}) {
 	for msg := range imcomech {
@@ -85,6 +92,15 @@ func main() {
 	var EconomyCommand = modules2.ReadCommand(filePath)
 	fmt.Printf("[Success]Economy log Loaded!\n")
 
+	//found newset KillEventLog
+	filePath, newsetTime, err = modules2.FindNewestKillEventLog(os.Args[2])
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("[Success]Kill log founded!%s(%s)\n]", filePath, newsetTime)
+	var KillCommand = modules2.ReadCommand(filePath)
+	fmt.Printf("[Success]Kill log Loaded!\n")
+
 	addr := fmt.Sprintf("0.0.0.0:%s", os.Args[1])
 	online := make(chan struct{})
 	execch := make(chan string)
@@ -115,6 +131,11 @@ func main() {
 	//reg = `^(\d{4}\.\d{2}\.\d{2}-\d{2}\.\d{2}\.\d{2}): '([\d\.]+) (\d+):([^()']+)\((\d+)\)' logged (in|out) at: X=([-\d\.]+) Y=([-\d\.]+) Z=([-\d\.]+)(?: \(as drone\))?$`
 	go EconomyCommandSender(EconomyCommand, ecoch)
 	go modules2.EconomyHandler(ecoch, execch)
+	//玩家击杀行为
+	killch := make(chan string)
+	reg = `Died: [^()]+\s\((\d+)\), Killer: [^()]+\s\((\d+)\) Weapon: ([^\[]+)\s\[(\w+)\]`
+	go KillCommandSender(KillCommand, killch)
+	go modules2.KillHandler(reg, killch, execch)
 
 	//数据库监控
 	DBWincomech := make(chan map[string]interface{})
