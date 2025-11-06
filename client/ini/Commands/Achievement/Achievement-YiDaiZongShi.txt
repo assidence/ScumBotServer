@@ -1,0 +1,1 @@
+SpawnItem Rice 1 Location %s

@@ -1,0 +1,1 @@
+SpawnInventoryFullOf Improvised_Bag_Small_02 0 Apple_2 Banana Orange Lemon Location %s

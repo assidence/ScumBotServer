@@ -1,0 +1,1 @@
+SpawnItem Organic_Fertilizer 1 Location %s

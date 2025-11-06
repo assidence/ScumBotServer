@@ -70,6 +70,8 @@ func Selecter(steamID string, cfgCommand string) []string {
 		for steamid, _ := range OnlinePlayers {
 			cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(output, steamid))
 		}
+	case "SpawnInventoryFullOf":
+		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID))
 	default:
 		//fmt.Println("[ERROR-CommandSelecter]->Error:无法匹配命令 ", cmd)
 		cfgChat = append(cfgChat, cfgCommand)
