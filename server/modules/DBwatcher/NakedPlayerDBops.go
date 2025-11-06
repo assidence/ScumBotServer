@@ -2,9 +2,8 @@ package DBwatcher
 
 import (
 	"database/sql"
-	"log"
-
 	_ "github.com/mattn/go-sqlite3"
+	"log"
 )
 
 // OpenDBRO 只读打开数据库
@@ -28,7 +27,10 @@ func QueryColumn(db *sql.DB, query string, args ...interface{}) []string {
 	var results []string
 	for rows.Next() {
 		var val string
-		rows.Scan(&val)
+		if err := rows.Scan(&val); err != nil {
+			log.Println("Scan 错误:", err)
+			continue
+		}
 		results = append(results, val)
 	}
 	return results

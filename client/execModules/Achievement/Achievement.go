@@ -279,6 +279,8 @@ func AchievementRecordSelecter(steamID string, action string, target string, tar
 		recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
 	case "equip":
 		recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
+	case "skills":
+		recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
 	}
 
 	recorder.AchievementCheckAchievements(steamID, achv, chatChan)

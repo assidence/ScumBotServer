@@ -2,7 +2,6 @@ package DBwatcher
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -10,17 +9,16 @@ import (
 
 // Start 启动 DBwatcher 模块（被动模式）
 func Start(execch chan string, DBWincomech chan map[string]interface{}) {
-	dbPath := strings.Replace(os.Args[2], "Logs", "SCUM.db", 1)
-	fmt.Println("[DBWatcher] Database path:", dbPath)
-
-	db, err := OpenDBRO(dbPath)
-	if err != nil {
-		log.Fatal("无法打开数据库:", err)
-	}
-	defer db.Close()
-
 	for msg := range DBWincomech {
-		fmt.Printf("[DBWatcher] 收到数据库查询任务: %s\n", msg["type"])
+		//fmt.Printf("[DBWatcher] 收到数据库查询任务: %s\n", msg["type"])
+		dbPath := strings.Replace(os.Args[2], "Logs", "SCUM.db", 1)
+		//fmt.Println("[DBWatcher] Database path:", dbPath)
+
+		db, err := OpenDBRO(dbPath)
+		if err != nil {
+			log.Fatal("无法打开数据库:", err)
+		}
+		defer db.Close()
 
 		if strings.Contains(msg["type"].(string), "onlinePlayers") {
 			PlayerList := strings.Split(msg["SteamIdList"].(string), "-")
@@ -39,6 +37,22 @@ func Start(execch chan string, DBWincomech chan map[string]interface{}) {
 				jsonBytes, _ := json.Marshal(execData)
 				execch <- string(jsonBytes)
 			}
+			result = GetStrongPlayers(db, PlayerList)
+			if result == nil || len(result) == 0 {
+				continue
+			}
+			for _, steamId := range result {
+				//fmt.Println("识别到头尖尖的玩家:", steamId)
+				execData := map[string]string{
+					"steamID":     "000000",
+					"nickName":    "System",
+					"command":     "skills",
+					"commandArgs": steamId + "-" + "fit" + "-" + "1",
+				}
+				jsonBytes, _ := json.Marshal(execData)
+				execch <- string(jsonBytes)
+			}
+			db.Close()
 		}
 
 	}
