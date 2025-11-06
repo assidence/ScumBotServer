@@ -52,8 +52,7 @@ func Start(execch chan string, DBWincomech chan map[string]interface{}) {
 				jsonBytes, _ := json.Marshal(execData)
 				execch <- string(jsonBytes)
 			}
-			db.Close()
 		}
-
+		db.Close()
 	}
 }
