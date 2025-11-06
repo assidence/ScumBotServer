@@ -1,1 +1,4 @@
-SpawnInventoryFullOf Improvised_Bag_Small_02 0 Apple_2 Banana Orange Lemon Location %s
+SpawnItem Apple_2 1 Location %s
+SpawnItem Banana 1 Location %s
+SpawnItem Orange 1 Location %s
+SpawnItem Lemon 1 Location %s
