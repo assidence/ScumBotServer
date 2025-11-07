@@ -8,9 +8,14 @@ import (
 
 // OpenDBRO 只读打开数据库
 func OpenDBRO(dbPath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "file:"+dbPath+"?mode=ro")
+	db, err := sql.Open("sqlite3", "file:"+dbPath+"?mode=ro&immutable=1")
 	if err != nil {
-		return nil, err
+		// 如果 immutable 不被支持，尝试普通只读模式
+		log.Printf("[DBwatcher-Warnning] immutable 不被支持，回退为 mode=ro")
+		db, err = sql.Open("sqlite3", "file:"+dbPath+"?mode=ro")
+		if err != nil {
+			return nil, err
+		}
 	}
 	return db, nil
 }
