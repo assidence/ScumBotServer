@@ -103,7 +103,7 @@ func main() {
 
 	addr := fmt.Sprintf("0.0.0.0:%s", os.Args[1])
 	online := make(chan struct{})
-	execch := make(chan string, 100)
+	execch := make(chan string, 128)
 	incomech := make(chan IMServer2.Message)
 	go IMServer2.StartServer(addr, incomech, online)
 	for {
