@@ -2,6 +2,7 @@ package DBwatcher
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 )
@@ -11,7 +12,7 @@ func OpenDBRO(dbPath string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", "file:"+dbPath+"?mode=ro&immutable=1")
 	if err != nil {
 		// 如果 immutable 不被支持，尝试普通只读模式
-		log.Printf("[DBwatcher-Warnning] immutable 不被支持，回退为 mode=ro")
+		fmt.Println("[DBwatcher-Warnning] immutable 不被支持，回退为 mode=ro ", err)
 		db, err = sql.Open("sqlite3", "file:"+dbPath+"?mode=ro")
 		if err != nil {
 			return nil, err
