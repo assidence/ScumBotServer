@@ -87,7 +87,7 @@ SCUM_Auto(*) {
 
     ; ========================
     ; 1️⃣ 掉线检测
-    disconnectExist := ImageSearch(&bx, &by, 0, 0, winW, winH, "*85 " disconnectOK)
+    disconnectExist := ImageSearch(&bx, &by, 0, 0, winW, winH, "*65 " disconnectOK)
     ;Log("掉线OK按钮检测结果：" disconnectExist)
     ;Sleep 2000
     if disconnectExist{
@@ -103,7 +103,7 @@ SCUM_Auto(*) {
 
     ; ========================
     ; 2️⃣ 主菜单继续游戏
-    continuebtnExist := ImageSearch(&bx, &by, 0, 0, winW, winH, "*85 " continueBtn)
+    continuebtnExist := ImageSearch(&bx, &by, 0, 0, winW, winH, "*65 " continueBtn)
     ;Log("主菜单继续游戏检测结果：" continuebtnExist)
     ;Sleep 2000
     if continuebtnExist {
@@ -149,7 +149,7 @@ SCUM_Auto(*) {
 
     ; ========================
     ; 5️⃣ 聊天栏全球频道检测
-    chatExists := ImageSearch(&bx, &by, 0, 0, winW, winH, "*85 " chatGlobal)
+    chatExists := ImageSearch(&bx, &by, 0, 0, winW, winH, "*60 " chatGlobal)
         if !chatExists {
         Log("ImageSearch chatIcon not found!" "chatExists=" chatExists)
         ;Click(winX + 10, winY + 10)
