@@ -270,20 +270,34 @@ func (r *BehaviorRecorder) AchievementUnlockAchievement(steamID string, achv Ach
 
 // 分流行为记录
 func AchievementRecordSelecter(steamID string, action string, target string, targetQuantity int, recorder *BehaviorRecorder, achv []Achievement, chatChan chan string) {
-	switch action {
-	case "Killer", "Died":
-		recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
-	case "purchased":
-		recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
-	case "sold":
-		recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
-	case "equip":
-		recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
-	case "skills":
-		recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
+	/*
+		switch action {
+		case "Killer", "Died":
+			recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
+		case "purchased":
+			recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
+		case "sold":
+			recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
+		case "equip":
+			recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
+		case "skills":
+			recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
+		}
+	*/
+	triggered := false
+
+	for _, a := range achv {
+		if action == a.ActionType && (target == a.Target || a.Target == "all") {
+			recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
+			triggered = true
+		}
 	}
 
-	recorder.AchievementCheckAchievements(steamID, achv, chatChan)
+	// 只有至少有一个成就匹配时才检查
+	if triggered {
+		recorder.AchievementCheckAchievements(steamID, achv, chatChan)
+	}
+
 }
 
 // ------------------------ 命令处理 ------------------------

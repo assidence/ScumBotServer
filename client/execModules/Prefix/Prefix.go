@@ -5,10 +5,10 @@ import (
 	"ScumBotServer/client/execModules/Public"
 	"database/sql"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
+	"strconv"
 	"strings"
 	"sync"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 // PlayerTitle 玩家称号记录
@@ -107,6 +107,57 @@ func (m *TitleManager) PrefixListenCommands(chatChan chan string) {
 			chatChan <- line
 			chatChan <- fmt.Sprintf("%s当前称号已取消展示", p.Name)
 			fmt.Println("[Prefix-Module]:" + line)
+		case CommandQuery:
+			if Public.TitleInterface.OnlinePlayerPrefixList == nil {
+				fmt.Println("[Error-Prefix] 玩家称号列表未初始化")
+				break
+			}
+			titleList, err := m.PrefixGetTitlesByUserID(cmd.UserID)
+			if err != nil {
+				fmt.Printf("[Error-Prefix] 玩家 %s查询拥有的称号失败: %v\n", cmd.UserID, err)
+			} else {
+				Public.TitleInterface.OnlinePlayerPrefixList[cmd.UserID] = titleList
+				line := fmt.Sprintf("玩家: %s 拥有的称号是: ", cmd.UserID)
+				for i, pid := range titleList {
+					line += fmt.Sprintf(" [%d]-★%s★-  ", i+1, pid)
+				}
+				line += fmt.Sprintf("使用示例 @使用称号 1 可以设置-★%s★-作为称号", titleList[0])
+				chatChan <- line
+			}
+		case CommandUse:
+			if Public.TitleInterface.OnlinePlayerPrefixList == nil {
+				fmt.Println("[Error-Prefix] 玩家称号列表未初始化")
+				break
+			}
+			i, err := strconv.Atoi(cmd.Title)
+			if err != nil {
+				fmt.Printf("[Error-Prefix] 玩家 %s 设置称号命令执行失败: %v\n", cmd.UserID, err)
+				break
+			}
+
+			var line string
+			titles, ok := Public.TitleInterface.OnlinePlayerPrefixList[cmd.UserID]
+			if !ok || len(titles) == 0 || i < 0 || i-1 >= len(titles) {
+				line = fmt.Sprintf("玩家: %s 找不到对应序号的称号\n", cmd.UserID)
+				fmt.Printf("[Error-Prefix] 找不到对应玩家%s的称号记录：记录长度%d\n", cmd.UserID, len(titles))
+				chatChan <- line
+				break
+			}
+
+			cmd.Title = titles[i-1]
+			if cmd.Title == "" {
+				line = fmt.Sprintf("玩家: %s 找不到对应序号的称号\n", cmd.UserID)
+			} else {
+				// 这里可以放你成功设置称号的逻辑
+				p := Public.LogWatcherInterface.Players[cmd.UserID]
+				p.Prefix = cmd.Title
+				Public.LogWatcherInterface.Players[cmd.UserID] = p
+				line := fmt.Sprintf("#SetFakeName %s -★%s★-%s", cmd.UserID, cmd.Title, p.Name)
+				chatChan <- line
+				chatChan <- fmt.Sprintf("%s当前称号设为 %s 可使用@隐藏称号 来取消", p.Name, cmd.Title)
+				fmt.Println("[Prefix-Module]:" + line)
+			}
+			chatChan <- line
 		}
 		close(cmd.Done)
 	}
@@ -175,6 +226,35 @@ func (m *TitleManager) PrefixHasTitle(userID, title string) (bool, error) {
 	SELECT COUNT(*) FROM player_titles WHERE user_id = ? AND title = ?
 	`, userID, title).Scan(&count)
 	return count > 0, err
+}
+
+// PrefixGetTitlesByUserID 查询指定用户的所有称号列表（含激活状态）
+func (m *TitleManager) PrefixGetTitlesByUserID(userID string) ([]string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	rows, err := m.db.Query(`
+		SELECT title, active FROM player_titles WHERE user_id = ?
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var titles []string
+	for rows.Next() {
+		var title string
+		var active int
+		if err := rows.Scan(&title, &active); err != nil {
+			return nil, err
+		}
+		titles = append(titles, title)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return titles, nil
 }
 
 // PrefixGetActiveTitle 查询当前使用称号
@@ -258,6 +338,9 @@ func PrefixCommandHandler(PrefixChan chan map[string]interface{}, cfg *execModul
 				continue
 			}
 		}
+		if len(commandArgs) == 0 {
+			commandArgs = append(commandArgs, "")
+		}
 		if len(commandArgs) == 1 {
 			commandArgs = append(commandArgs, "")
 		}
@@ -301,4 +384,6 @@ const (
 	CommandRemove = Public.CommandRemove
 	CommandSet    = Public.CommandSet
 	CommandUnSet  = Public.CommandUnSet
+	CommandQuery  = Public.CommandQuery
+	CommandUse    = Public.CommandUse
 )
