@@ -4,7 +4,6 @@ import (
 	"ScumBotServer/client/execModules"
 	"bufio"
 	"fmt"
-	"net"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -86,15 +85,13 @@ func main() {
 
 	for {
 		NetworkSignal := make(chan struct{})
+		exitChan := make(chan struct{})
 		conn := HttpClient(address)
-		defer func(conn net.Conn) {
-			err := conn.Close()
-			if err != nil {
-				panic(err)
-			}
-		}(conn)
-		go commandReader(re, conn, execCommand, NetworkSignal)
-		go commandSender(conn, sendChannel)
+		go commandReader(re, conn, execCommand, NetworkSignal, exitChan)
+		go commandSender(conn, sendChannel, exitChan)
 		<-NetworkSignal
+		fmt.Println("[WatchDog] 检测到掉线，关闭当前连接并尝试重连")
+		close(exitChan)
+		conn.Close()
 	}
 }

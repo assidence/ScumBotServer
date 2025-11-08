@@ -117,7 +117,7 @@ func (m *TitleManager) PrefixListenCommands(chatChan chan string) {
 				fmt.Printf("[Error-Prefix] 玩家 %s查询拥有的称号失败: %v\n", cmd.UserID, err)
 			} else {
 				Public.TitleInterface.OnlinePlayerPrefixList[cmd.UserID] = titleList
-				line := fmt.Sprintf("玩家: %s 拥有的称号是: ", cmd.UserID)
+				line := fmt.Sprintf("玩家: %s 拥有的称号是: ", Public.LogWatcherInterface.Players[cmd.UserID].Name)
 				for i, pid := range titleList {
 					line += fmt.Sprintf(" [%d]-★%s★-  ", i+1, pid)
 				}
@@ -125,6 +125,7 @@ func (m *TitleManager) PrefixListenCommands(chatChan chan string) {
 				chatChan <- line
 			}
 		case CommandUse:
+			p := Public.LogWatcherInterface.Players[cmd.UserID]
 			if Public.TitleInterface.OnlinePlayerPrefixList == nil {
 				fmt.Println("[Error-Prefix] 玩家称号列表未初始化")
 				break
@@ -138,7 +139,7 @@ func (m *TitleManager) PrefixListenCommands(chatChan chan string) {
 			var line string
 			titles, ok := Public.TitleInterface.OnlinePlayerPrefixList[cmd.UserID]
 			if !ok || len(titles) == 0 || i < 0 || i-1 >= len(titles) {
-				line = fmt.Sprintf("玩家: %s 找不到对应序号的称号\n", cmd.UserID)
+				line = fmt.Sprintf("玩家: %s 找不到对应序号的称号\n", p.Name)
 				fmt.Printf("[Error-Prefix] 找不到对应玩家%s的称号记录：记录长度%d\n", cmd.UserID, len(titles))
 				chatChan <- line
 				break
@@ -146,10 +147,9 @@ func (m *TitleManager) PrefixListenCommands(chatChan chan string) {
 
 			cmd.Title = titles[i-1]
 			if cmd.Title == "" {
-				line = fmt.Sprintf("玩家: %s 找不到对应序号的称号\n", cmd.UserID)
+				line = fmt.Sprintf("玩家: %s 找不到对应序号的称号\n", p.Name)
 			} else {
 				// 这里可以放你成功设置称号的逻辑
-				p := Public.LogWatcherInterface.Players[cmd.UserID]
 				p.Prefix = cmd.Title
 				Public.LogWatcherInterface.Players[cmd.UserID] = p
 				line := fmt.Sprintf("#SetFakeName %s -★%s★-%s", cmd.UserID, cmd.Title, p.Name)

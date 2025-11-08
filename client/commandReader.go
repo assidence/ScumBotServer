@@ -25,14 +25,27 @@ func HttpClient(address string) net.Conn {
 }
 
 // commandReader unmarshal JSON to key:value map
-func commandReader(re *regexp.Regexp, conn net.Conn, execCommand chan map[string]interface{}, networkSignal chan struct{}) {
+func commandReader(re *regexp.Regexp, conn net.Conn, execCommand chan map[string]interface{}, networkSignal chan struct{}, exitChan chan struct{}) {
 	reader := bufio.NewReader(conn)
+	var line string
+	var err error
 	for {
-		line, err := reader.ReadString('\n') //each JSON end with \n
+		select {
+		case <-exitChan:
+			return
+		default:
+			line, err = reader.ReadString('\n') //each JSON end with \n
+		}
+
 		if err != nil {
 			fmt.Println("Disconnect from server:" + err.Error())
-			//close(execCommand)
-			close(networkSignal)
+			// 防止重复关闭 channel 导致 panic
+			select {
+			case <-networkSignal:
+				// 已经关闭过
+			default:
+				close(networkSignal)
+			}
 			return
 		}
 		//match := re.FindString(line)
