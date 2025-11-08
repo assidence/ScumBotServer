@@ -113,17 +113,19 @@ func (m *TitleManager) PrefixListenCommands(chatChan chan string) {
 				break
 			}
 			titleList, err := m.PrefixGetTitlesByUserID(cmd.UserID)
-			if err != nil {
+			var line string
+			if err != nil || len(titleList) == 0 {
 				fmt.Printf("[Error-Prefix] 玩家 %s查询拥有的称号失败: %v\n", cmd.UserID, err)
+				line = fmt.Sprintf("玩家: %s 还未拥有任何称号 称号会随着游戏行为解锁", Public.LogWatcherInterface.Players[cmd.UserID].Name)
 			} else {
 				Public.TitleInterface.OnlinePlayerPrefixList[cmd.UserID] = titleList
-				line := fmt.Sprintf("玩家: %s 拥有的称号是: ", Public.LogWatcherInterface.Players[cmd.UserID].Name)
+				line = fmt.Sprintf("玩家: %s 拥有的称号是: ", Public.LogWatcherInterface.Players[cmd.UserID].Name)
 				for i, pid := range titleList {
 					line += fmt.Sprintf(" [%d]-★%s★-  ", i+1, pid)
 				}
 				line += fmt.Sprintf("使用示例 @使用称号 1 可以设置-★%s★-作为称号", titleList[0])
-				chatChan <- line
 			}
+			chatChan <- line
 		case CommandUse:
 			p := Public.LogWatcherInterface.Players[cmd.UserID]
 			if Public.TitleInterface.OnlinePlayerPrefixList == nil {
