@@ -150,16 +150,22 @@ func (m *TitleManager) PrefixListenCommands(chatChan chan string) {
 			cmd.Title = titles[i-1]
 			if cmd.Title == "" {
 				line = fmt.Sprintf("玩家: %s 找不到对应序号的称号\n", p.Name)
+				chatChan <- line
+				break
+			}
+			if err = m.PrefixSetActiveTitle(cmd.UserID, cmd.Title); err != nil {
+				chatChan <- fmt.Sprintf("%s设置当前称号失败: %v", Public.LogWatcherInterface.Players[cmd.UserID].Name, err)
+				fmt.Printf("[Error-Prefix] 玩家 %s设置当前称号失败: %v\n", cmd.UserID, err)
+				break
 			} else {
 				// 这里可以放你成功设置称号的逻辑
 				p.Prefix = cmd.Title
 				Public.LogWatcherInterface.Players[cmd.UserID] = p
-				line := fmt.Sprintf("#SetFakeName %s -★%s★-%s", cmd.UserID, cmd.Title, p.Name)
+				line = fmt.Sprintf("#SetFakeName %s -★%s★-%s", cmd.UserID, cmd.Title, p.Name)
 				chatChan <- line
 				chatChan <- fmt.Sprintf("%s当前称号设为 %s 可使用@隐藏称号 来取消", p.Name, cmd.Title)
 				fmt.Println("[Prefix-Module]:" + line)
 			}
-			chatChan <- line
 		}
 		close(cmd.Done)
 	}
