@@ -59,10 +59,12 @@ func CommandHandler(KitsChan chan map[string]interface{}, cfg *execModules.Confi
 		ok, msg := PMbucket.CanExecute(command["steamID"].(string), command["command"].(string))
 		//fmt.Println(command["steamID"].(string) + command["command"].(string))
 		if !ok {
-			fmt.Println("[ERROR-KIT]->Error:", msg)
+			pnickName := Public.LogWatcherInterface.Players[command["steamID"].(string)].Name
+			fmt.Println("[ERROR-Kits]->Error:", pnickName, msg)
+			chatChan <- fmt.Sprintf("玩家%s：%s", pnickName, msg)
 			continue
 		}
-
+		//PMbucket.Consume(command["steamID"].(string), command["command"].(string))
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
 			cfglines := Public.CommandSelecterInterface.Selecter(command["steamID"].(string), cfgCommand)

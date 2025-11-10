@@ -60,16 +60,18 @@ func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Co
 		ok, msg := PMbucket.CanExecute(command["steamID"].(string), command["command"].(string))
 		//fmt.Println(command["steamID"].(string) + command["command"].(string))
 		if !ok {
-			fmt.Println("[ERROR-DidiCar]->Error:", msg)
+			pnickName := Public.LogWatcherInterface.Players[command["steamID"].(string)].Name
+			fmt.Println("[ERROR-DidiCar]->Error:", pnickName, msg)
+			chatChan <- fmt.Sprintf("玩家%s：%s", pnickName, msg)
 			continue
 		}
-
+		//PMbucket.Consume(command["steamID"].(string), command["command"].(string))
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
 			cfglines := Public.CommandSelecterInterface.Selecter(command["steamID"].(string), cfgCommand)
-			for _, lines := range cfglines {
-				chatChan <- lines
-				fmt.Println("[DidiCar-Module]:" + lines)
+			for _, line := range cfglines {
+				chatChan <- line
+				fmt.Println("[DidiCar-Module]:" + line)
 			}
 		}
 		//chatChan <- fmt.Sprintf("%s 滴滴车已到达", command["nickName"].(string))

@@ -285,32 +285,34 @@ func (m *Manager) CanExecute(playerID, command string) (bool, string) {
 	if cfg.CoolDown > 0 && !b.LastUsed.IsZero() {
 		remaining := cfg.CoolDown - time.Since(b.LastUsed)
 		if remaining > 0 {
-			return false, fmt.Sprintf("[Permission] 冷却中，剩余 %d 秒", int(remaining.Seconds()))
+			return false, fmt.Sprintf("冷却中，剩余 %d 秒", int(remaining.Seconds()))
 		}
 	}
 	// daily limit
 	if cfg.DailyLimit > 0 && b.DailyCount >= cfg.DailyLimit {
-		return false, fmt.Sprintf("[Permission] 今日已达上限 %d/%d", b.DailyCount, cfg.DailyLimit)
+		return false, fmt.Sprintf("今日已达上限 %d/%d", b.DailyCount, cfg.DailyLimit)
 	}
 	// total limit
 	if cfg.TotalLimit >= 0 && b.TotalCount >= cfg.TotalLimit {
-		return false, fmt.Sprintf("[Permission] 总次数已达上限 %d/%d", b.TotalCount, cfg.TotalLimit)
+		return false, fmt.Sprintf("总次数已达上限 %d/%d", b.TotalCount, cfg.TotalLimit)
 	}
 	// Prefix limit
 	if cfg.PrefixRequire != "" {
 		ok, _ := TitleInterface.PrefixHasTitle(playerID, cfg.PrefixRequire)
 		if !ok {
-			return false, fmt.Sprintf("[Permission] 执行此命令需要称号【%s】", cfg.PrefixRequire)
+			return false, fmt.Sprintf("执行此命令需要称号【%s】", cfg.PrefixRequire)
 		}
 	}
-	return true, "[Permission] 允许执行"
+	//b.mu.Unlock()
+	m.Consume(playerID, command)
+	return true, "允许执行"
 }
 
 // Consume 在允许执行后调用：记录使用并保存
 func (m *Manager) Consume(playerID, command string) {
 	b := m.getOrCreateBucket(playerID, command)
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	//b.mu.Lock()
+	//defer b.mu.Unlock()
 	b.LastUsed = time.Now()
 	b.DailyCount++
 	b.TotalCount++
