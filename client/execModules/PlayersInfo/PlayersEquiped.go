@@ -7,26 +7,25 @@ import (
 	"strings"
 )
 
+// -------------------- 数据库读取 --------------------
+
 // LoadClothesItems 按类别读取 ./db/itemsDB.db 中 Clothes 表的物品信息。
 // 返回值: map[category][]item_name
 func LoadClothesItems(dbPath string) (map[string][]string, error) {
 	result := make(map[string][]string)
 
-	// 1️⃣ 打开数据库（只读模式）
 	db, err := sql.Open("sqlite3", "file:"+dbPath+"?mode=ro")
 	if err != nil {
 		return nil, fmt.Errorf("无法打开数据库: %v", err)
 	}
 	defer db.Close()
 
-	// 2️⃣ 查询 category 和 item_name
 	rows, err := db.Query(`SELECT category, item_name FROM Clothes`)
 	if err != nil {
 		return nil, fmt.Errorf("查询失败: %v", err)
 	}
 	defer rows.Close()
 
-	// 3️⃣ 遍历结果并按类别分组
 	for rows.Next() {
 		var category, itemName string
 		if err := rows.Scan(&category, &itemName); err != nil {
@@ -39,65 +38,104 @@ func LoadClothesItems(dbPath string) (map[string][]string, error) {
 		return nil, fmt.Errorf("读取结果时出错: %v", err)
 	}
 
-	//fmt.Println("[DBwatcher] 成功读取物品数据:", len(result), "个类别")
 	return result, nil
 }
 
-// -------------------- 配置读取 --------------------
-var cfg *ini.File
+// -------------------- INI 配置读取 --------------------
 
-// LoadEquipmentConfig 读取 ini 文件，返回 ini.File 对象
-func LoadEquipmentConfig(iniPath string) (*ini.File, error) {
-	var err error
-	cfg, err = ini.Load(iniPath)
+// EquipmentConfig 保存已解析的 INI 配置
+type EquipmentConfig struct {
+	Sections []*ini.Section
+}
+
+// LoadEquipmentConfig 读取 ini 文件并返回已解析对象
+func LoadEquipmentConfig(iniPath string) (*EquipmentConfig, error) {
+	cfg, err := ini.Load(iniPath)
 	if err != nil {
 		return nil, fmt.Errorf("无法读取 ini 文件: %v", err)
 	}
-	return cfg, nil
+
+	sections := []*ini.Section{}
+	for _, s := range cfg.Sections() {
+		if s.Name() == "DEFAULT" {
+			continue
+		}
+		sections = append(sections, s)
+	}
+
+	return &EquipmentConfig{Sections: sections}, nil
 }
 
 // -------------------- 玩家装备评估 --------------------
 
 // EvaluatePlayerEquipment 根据已加载的配置评估玩家装备
-// equipped: map[steamID][]itemNames
-// cfg: ini 文件对象（已加载）
+// equipped: map[steamID]interface{}，每个 interface{} 可以是 []string 或 []interface{}
+// cfg: 已加载 EquipmentConfig 对象
 // 返回 map[ruleName][]steamID
 func EvaluatePlayerEquipment(equipped map[string]interface{}) map[string][]string {
 	result := make(map[string][]string)
 
-	// 遍历每个配置段（如 [naturism]）
-	for _, section := range cfg.Sections() {
-		sectionName := section.Name()
-		if sectionName == "DEFAULT" {
+	if eqiupCfg == nil || len(eqiupCfg.Sections) == 0 {
+		fmt.Println("[EvaluatePlayerEquipment] 配置为空或未加载")
+		return result
+	}
+
+	for _, section := range eqiupCfg.Sections {
+		if section == nil {
 			continue
 		}
+		sectionName := section.Name()
+		fmt.Println("----- 处理配置段:", sectionName, "-----")
 
-		// 从配置中读取各类条件
+		// 安全读取每个字段
 		caUnEquipts := parseList(section.Key("CaUnEquipt").String())
 		caEquipts := parseList(section.Key("CaEquipts").String())
 		unEquipts := parseList(section.Key("UnEquipts").String())
 		equipts := parseList(section.Key("Equipts").String())
 
-		var matchedPlayers []string
+		fmt.Println("配置段条件 - CaUnEquipts:", caUnEquipts)
+		fmt.Println("配置段条件 - CaEquipts:", caEquipts)
+		fmt.Println("配置段条件 - UnEquipts:", unEquipts)
+		fmt.Println("配置段条件 - Equipts:", equipts)
 
-		// 遍历每个玩家
+		var matchedPlayers []string
 		for steamID, itemsInterface := range equipped {
-			if matchPlayer(itemsInterface.([]string), caUnEquipts, caEquipts, unEquipts, equipts) {
+			fmt.Println("正在评估玩家:", steamID)
+			itemsList := toStringSlice(itemsInterface)
+			fmt.Println("玩家物品列表:", itemsList)
+
+			if matchPlayer(itemsList, caUnEquipts, caEquipts, unEquipts, equipts) {
+				fmt.Println("玩家符合条件，加入结果:", steamID)
 				matchedPlayers = append(matchedPlayers, steamID)
+			} else {
+				fmt.Println("玩家不符合条件:", steamID)
 			}
 		}
 
 		result[sectionName] = matchedPlayers
+		fmt.Println("配置段处理完成:", sectionName, "符合条件玩家:", matchedPlayers)
 	}
 
 	return result
 }
 
-func interfaceSliceToStringSlice(items []interface{}) []string {
-	strs := make([]string, 0, len(items))
-	for _, v := range items {
-		if s, ok := v.(string); ok {
-			strs = append(strs, s)
+// -------------------- 辅助函数 --------------------
+
+// 将 interface{} 转成 []string
+func toStringSlice(itemsInterface interface{}) []string {
+	strs := []string{}
+	if itemsInterface == nil {
+		return strs
+	}
+
+	switch v := itemsInterface.(type) {
+	case []string:
+		return v
+	case []interface{}:
+		for _, i := range v {
+			if s, ok := i.(string); ok {
+				strs = append(strs, s)
+			}
 		}
 	}
 	return strs
@@ -124,53 +162,19 @@ func matchPlayer(items, caUnEquipts, caEquipts, unEquipts, equipts []string) boo
 	fmt.Println("UnEquipts:", unEquipts)
 	fmt.Println("Equipts:", equipts)
 
-	// 转为统一小写
-	toLowerList := func(lst []string) []string {
-		out := make([]string, len(lst))
-		for i, v := range lst {
-			out[i] = strings.ToLower(v)
-		}
-		return out
-	}
-
-	lowerItems := toLowerList(items)
-	caUnEquipts = toLowerList(caUnEquipts)
-	caEquipts = toLowerList(caEquipts)
-	unEquipts = toLowerList(unEquipts)
-	equipts = toLowerList(equipts)
-
-	fmt.Println("小写处理后玩家物品:", lowerItems)
-	fmt.Println("小写处理后 CaUnEquipts:", caUnEquipts)
-	fmt.Println("小写处理后 CaEquipts:", caEquipts)
-	fmt.Println("小写处理后 UnEquipts:", unEquipts)
-	fmt.Println("小写处理后 Equipts:", equipts)
-
-	// 判断是否包含辅助函数
-	containsAny := func(targets []string) bool {
-		for _, item := range lowerItems {
-			for _, t := range targets {
-				if strings.Contains(item, t) {
-					return true
-				}
-			}
-		}
-		return false
-	}
-
-	// 判断逻辑
-	if len(caUnEquipts) > 0 && containsAny(caUnEquipts) {
+	if len(caUnEquipts) > 0 && containsAnyCA(caUnEquipts, items) {
 		fmt.Println("不符合条件: 玩家装备包含 CaUnEquipts 中物品")
 		return false
 	}
-	if len(caEquipts) > 0 && !containsAny(caEquipts) {
+	if len(caEquipts) > 0 && !containsAnyCA(caEquipts, items) {
 		fmt.Println("不符合条件: 玩家装备不包含任何 CaEquipts 中物品")
 		return false
 	}
-	if len(unEquipts) > 0 && containsAny(unEquipts) {
+	if len(unEquipts) > 0 && containsAny(unEquipts, items) {
 		fmt.Println("不符合条件: 玩家装备包含 UnEquipts 中物品")
 		return false
 	}
-	if len(equipts) > 0 && !containsAny(equipts) {
+	if len(equipts) > 0 && !containsAny(equipts, items) {
 		fmt.Println("不符合条件: 玩家装备不包含任何 Equipts 中物品")
 		return false
 	}
@@ -178,4 +182,29 @@ func matchPlayer(items, caUnEquipts, caEquipts, unEquipts, equipts []string) boo
 	fmt.Println("玩家符合条件 ✅")
 	fmt.Println("----- matchPlayer 调试结束 -----")
 	return true
+}
+
+func containsAny(targets []string, items []string) bool {
+	for _, item := range items {
+		for _, t := range targets {
+			if item == t {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func containsAnyCA(targets []string, items []string) bool {
+	for _, item := range items {
+		for _, t := range targets {
+			for _, caItem := range itemsDB[t] {
+				fmt.Println(item, "-", caItem)
+				if item == caItem {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }

@@ -48,18 +48,40 @@ func CommandHandler(PlayersInfoChan chan map[string]interface{}, AchievementChan
 					PlayersAttributeInfoexecData["commandArgs"] = fmt.Sprintf("%s-%s-1", id, group)
 					AchievementChan <- PlayersAttributeInfoexecData
 				}
-				fmt.Printf("[PlayersInfo] 条件组 %s 符合玩家: %v\n", group, ids)
+				fmt.Printf("[PlayersInfo] 技能条件组 %s 符合玩家: %v\n", group, ids)
 			}
 		}
 		if cmdType == "PlayerEquipmentInfo" {
 			players := command["commandArgs"].(map[string]interface{})
 			result := EvaluatePlayerEquipment(players)
+			if len(result) == 0 {
+				continue
+			}
+			PlayerEquipmentInfoexecData := map[string]interface{}{
+				"steamID":  "000000",
+				"nickName": "System",
+				"command":  "",
+				//"commandArgs": steamId + "-" + "naked" + "-" + "1",
+				"commandArgs": "",
+			}
+			for group, ids := range result {
+				if len(ids) == 0 {
+					continue
+				}
+				PlayerEquipmentInfoexecData["command"] = "equip"
+				for _, id := range ids {
+					PlayerEquipmentInfoexecData["commandArgs"] = fmt.Sprintf("%s-%s-1", id, group)
+					AchievementChan <- PlayerEquipmentInfoexecData
+				}
+				fmt.Printf("[PlayersInfo] 装备条件组 %s 符合玩家: %v\n", group, ids)
+			}
 		}
 	}
 }
 
 var pcGroups map[string]*PlayerConditionGroup
 var itemsDB map[string][]string
+var eqiupCfg *EquipmentConfig
 
 // 主入口
 func PlayersInfo(regCommand *map[string][]string, PlayersInfoChan chan map[string]interface{}, AchievementChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
@@ -74,10 +96,17 @@ func PlayersInfo(regCommand *map[string][]string, PlayersInfoChan chan map[strin
 	pcGroups = LoadPlayerCondition("./ini/PlayersInfo/PlayersCondition.ini")
 	itemsDB, _ = LoadClothesItems("./db/itemsDB.db")
 
+	eqiupCfg, err = LoadEquipmentConfig("./ini/PlayersInfo/PlayersEquiped.ini")
+	if err != nil {
+		log.Println("[PlayersInfo-Error] 加载 PlayersInfoEquipment.ini 失败:", err)
+		eqiupCfg = &EquipmentConfig{} // 避免 nil
+	}
+
 	fmt.Println("[PlayersInfo] 读取到的物品id:")
-	for c, ilist := range itemsDB {
-		fmt.Printf("=====%s=====\n", c)
-		fmt.Println(ilist)
+	for c, _ := range itemsDB {
+		fmt.Print(c, ",", "\n")
+		//fmt.Printf("=====%s=====\n", c)
+		//fmt.Println(ilist)
 	}
 
 	go CommandHandler(PlayersInfoChan, AchievementChan, chatChan)
