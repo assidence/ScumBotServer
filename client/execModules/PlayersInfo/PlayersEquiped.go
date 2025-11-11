@@ -62,7 +62,7 @@ func LoadEquipmentConfig(iniPath string) (*ini.File, error) {
 // equipped: map[steamID][]itemNames
 // cfg: ini 文件对象（已加载）
 // 返回 map[ruleName][]steamID
-func EvaluatePlayerEquipment(equipped map[string][]interface{}) map[string][]string {
+func EvaluatePlayerEquipment(equipped map[string]interface{}) map[string][]string {
 	result := make(map[string][]string)
 
 	// 遍历每个配置段（如 [naturism]）
@@ -82,8 +82,7 @@ func EvaluatePlayerEquipment(equipped map[string][]interface{}) map[string][]str
 
 		// 遍历每个玩家
 		for steamID, itemsInterface := range equipped {
-			strItems := interfaceSliceToStringSlice(itemsInterface)
-			if matchPlayer(strItems, caUnEquipts, caEquipts, unEquipts, equipts) {
+			if matchPlayer(itemsInterface.([]string), caUnEquipts, caEquipts, unEquipts, equipts) {
 				matchedPlayers = append(matchedPlayers, steamID)
 			}
 		}
