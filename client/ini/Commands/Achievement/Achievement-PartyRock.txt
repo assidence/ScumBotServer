@@ -1,0 +1,1 @@
+SpawnItem Beer 1 Location %s
