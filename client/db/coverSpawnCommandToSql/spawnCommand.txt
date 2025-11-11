@@ -1,0 +1,14 @@
+#spawnitem Belt_Pistol_Holster 1
+#spawnitem Knife_Sheath 1
+#spawnitem Police_Handgun_Holster 1
+#spawnitem Scottish_Sporran_Bag_01 1
+#spawnitem Tactical_Handgun_Holster_02 1
+#spawnitem Tactical_Handgun_Holster_01 1
+#spawnitem Tactical_Handgun_Holster_05 1
+#spawnitem Tactical_Handgun_Holster_07 1
+#spawnitem Tactical_Handgun_Holster_04 1
+#spawnitem Tactical_Handgun_Holster_06 1
+#spawnitem Tactical_Handgun_Holster_03 1
+#spawnitem Waist_Bag_Small_02 1
+#spawnitem Waist_Bag_Small_03 1
+#spawnitem Waist_Bag_Small_01 1

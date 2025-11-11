@@ -1,0 +1,15 @@
+INSERT OR IGNORE INTO Clothes (item_name, category) VALUES
+('Belt_Pistol_Holster', 'Ears'),
+('Knife_Sheath', 'Ears'),
+('Police_Handgun_Holster', 'Ears'),
+('Scottish_Sporran_Bag_01', 'Ears'),
+('Tactical_Handgun_Holster_02', 'Ears'),
+('Tactical_Handgun_Holster_01', 'Ears'),
+('Tactical_Handgun_Holster_05', 'Ears'),
+('Tactical_Handgun_Holster_07', 'Ears'),
+('Tactical_Handgun_Holster_04', 'Ears'),
+('Tactical_Handgun_Holster_06', 'Ears'),
+('Tactical_Handgun_Holster_03', 'Ears'),
+('Waist_Bag_Small_02', 'Ears'),
+('Waist_Bag_Small_03', 'Ears'),
+('Waist_Bag_Small_01', 'Ears');
