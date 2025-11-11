@@ -62,7 +62,7 @@ func LoadEquipmentConfig(iniPath string) (*ini.File, error) {
 // equipped: map[steamID][]itemNames
 // cfg: ini 文件对象（已加载）
 // 返回 map[ruleName][]steamID
-func EvaluatePlayerEquipment(equipped map[string][]string) map[string][]string {
+func EvaluatePlayerEquipment(equipped map[string][]interface{}) map[string][]string {
 	result := make(map[string][]string)
 
 	// 遍历每个配置段（如 [naturism]）
@@ -81,8 +81,9 @@ func EvaluatePlayerEquipment(equipped map[string][]string) map[string][]string {
 		var matchedPlayers []string
 
 		// 遍历每个玩家
-		for steamID, items := range equipped {
-			if matchPlayer(items, caUnEquipts, caEquipts, unEquipts, equipts) {
+		for steamID, itemsInterface := range equipped {
+			strItems := interfaceSliceToStringSlice(itemsInterface)
+			if matchPlayer(strItems, caUnEquipts, caEquipts, unEquipts, equipts) {
 				matchedPlayers = append(matchedPlayers, steamID)
 			}
 		}
@@ -91,6 +92,16 @@ func EvaluatePlayerEquipment(equipped map[string][]string) map[string][]string {
 	}
 
 	return result
+}
+
+func interfaceSliceToStringSlice(items []interface{}) []string {
+	strs := make([]string, 0, len(items))
+	for _, v := range items {
+		if s, ok := v.(string); ok {
+			strs = append(strs, s)
+		}
+	}
+	return strs
 }
 
 // parseList 将逗号分隔的字符串转为 []string
@@ -105,8 +116,15 @@ func parseList(s string) []string {
 	return parts
 }
 
-// matchPlayer 判断单个玩家是否符合条件
+// matchPlayer 判断单个玩家是否符合条件，并打印 debug 信息
 func matchPlayer(items, caUnEquipts, caEquipts, unEquipts, equipts []string) bool {
+	fmt.Println("----- matchPlayer 调试开始 -----")
+	fmt.Println("原始玩家物品:", items)
+	fmt.Println("CaUnEquipts:", caUnEquipts)
+	fmt.Println("CaEquipts:", caEquipts)
+	fmt.Println("UnEquipts:", unEquipts)
+	fmt.Println("Equipts:", equipts)
+
 	// 转为统一小写
 	toLowerList := func(lst []string) []string {
 		out := make([]string, len(lst))
@@ -122,6 +140,12 @@ func matchPlayer(items, caUnEquipts, caEquipts, unEquipts, equipts []string) boo
 	unEquipts = toLowerList(unEquipts)
 	equipts = toLowerList(equipts)
 
+	fmt.Println("小写处理后玩家物品:", lowerItems)
+	fmt.Println("小写处理后 CaUnEquipts:", caUnEquipts)
+	fmt.Println("小写处理后 CaEquipts:", caEquipts)
+	fmt.Println("小写处理后 UnEquipts:", unEquipts)
+	fmt.Println("小写处理后 Equipts:", equipts)
+
 	// 判断是否包含辅助函数
 	containsAny := func(targets []string) bool {
 		for _, item := range lowerItems {
@@ -136,17 +160,23 @@ func matchPlayer(items, caUnEquipts, caEquipts, unEquipts, equipts []string) boo
 
 	// 判断逻辑
 	if len(caUnEquipts) > 0 && containsAny(caUnEquipts) {
+		fmt.Println("不符合条件: 玩家装备包含 CaUnEquipts 中物品")
 		return false
 	}
 	if len(caEquipts) > 0 && !containsAny(caEquipts) {
+		fmt.Println("不符合条件: 玩家装备不包含任何 CaEquipts 中物品")
 		return false
 	}
 	if len(unEquipts) > 0 && containsAny(unEquipts) {
+		fmt.Println("不符合条件: 玩家装备包含 UnEquipts 中物品")
 		return false
 	}
 	if len(equipts) > 0 && !containsAny(equipts) {
+		fmt.Println("不符合条件: 玩家装备不包含任何 Equipts 中物品")
 		return false
 	}
 
+	fmt.Println("玩家符合条件 ✅")
+	fmt.Println("----- matchPlayer 调试结束 -----")
 	return true
 }
