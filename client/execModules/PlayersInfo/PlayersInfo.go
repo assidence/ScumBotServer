@@ -7,6 +7,15 @@ import (
 	"ScumBotServer/client/execModules"
 )
 
+// Debug 输出管理
+var DebugEnabled = true // 可以在模块初始化或运行时控制开关
+
+func debug(format string, a ...interface{}) {
+	if DebugEnabled {
+		log.Printf("[PlayersInfo-DEBUG] "+format, a...)
+	}
+}
+
 // 注册命令
 func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	var commandList []string
