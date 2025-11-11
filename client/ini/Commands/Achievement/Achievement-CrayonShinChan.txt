@@ -1,0 +1,1 @@
+SpawnItem Bell_Pepper 1 Location %s

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 )
 
 func PlayerCommandSender(PlayerCommand *chan *Utf16tail.Line, commch chan string) {
@@ -54,12 +55,14 @@ func IncomeMessagesSelector(imcomech chan IMServer2.Message, DBWincomech chan ma
 			//fmt.Println("[IncomeMessageSelector] 非服务端任务 已跳过：", result["type"])
 			continue
 		}
+		now := time.Now().Format("2006-01-02 15:04:05")
 		switch result["type"].(string) {
 		case "onlinePlayers":
 			DBWincomech <- result
-			fmt.Println("[IncomeMessageSelector] 识别为DBWatcher任务")
+
+			fmt.Println(now, "[IncomeMessageSelector] 识别为DBWatcher任务")
 		default:
-			fmt.Println("[IncomeMessageSelector] 无法识别任务类型", result["type"])
+			fmt.Println(now, "[IncomeMessageSelector] 无法识别任务类型", result["type"])
 		}
 	}
 }

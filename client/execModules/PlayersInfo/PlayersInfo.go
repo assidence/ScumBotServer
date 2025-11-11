@@ -3,18 +3,10 @@ package PlayersInfo
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"ScumBotServer/client/execModules"
 )
-
-// Debug 输出管理
-var DebugEnabled = true // 可以在模块初始化或运行时控制开关
-
-func debug(format string, a ...interface{}) {
-	if DebugEnabled {
-		log.Printf("[PlayersInfo-DEBUG] "+format, a...)
-	}
-}
 
 // 注册命令
 func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
@@ -57,7 +49,8 @@ func CommandHandler(PlayersInfoChan chan map[string]interface{}, AchievementChan
 					PlayersAttributeInfoexecData["commandArgs"] = fmt.Sprintf("%s-%s-1", id, group)
 					AchievementChan <- PlayersAttributeInfoexecData
 				}
-				fmt.Printf("[PlayersInfo] 技能条件组 %s 符合玩家: %v\n", group, ids)
+				now := time.Now().Format("2006-01-02 15:04:05")
+				fmt.Printf("%s[PlayersInfo] 技能条件组 %s 符合玩家: %v\n", now, group, ids)
 			}
 		}
 		if cmdType == "PlayerEquipmentInfo" {
@@ -82,7 +75,8 @@ func CommandHandler(PlayersInfoChan chan map[string]interface{}, AchievementChan
 					PlayerEquipmentInfoexecData["commandArgs"] = fmt.Sprintf("%s-%s-1", id, group)
 					AchievementChan <- PlayerEquipmentInfoexecData
 				}
-				fmt.Printf("[PlayersInfo] 装备条件组 %s 符合玩家: %v\n", group, ids)
+				now := time.Now().Format("2006-01-02 15:04:05")
+				fmt.Printf("%s[PlayersInfo] 装备条件组 %s 符合玩家: %v\n", now, group, ids)
 			}
 		}
 	}

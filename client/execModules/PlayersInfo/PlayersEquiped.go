@@ -4,8 +4,18 @@ import (
 	"database/sql"
 	"fmt"
 	"gopkg.in/ini.v1"
+	"log"
 	"strings"
 )
+
+// Debug 输出管理
+var PEDebugEnabled = false // 可以在模块初始化或运行时控制开关
+
+func pedebug(format string, a ...interface{}) {
+	if PEDebugEnabled {
+		log.Printf("[PlayersInfo-DEBUG] "+format, a...)
+	}
+}
 
 // -------------------- 数据库读取 --------------------
 
@@ -70,13 +80,12 @@ func LoadEquipmentConfig(iniPath string) (*EquipmentConfig, error) {
 
 // EvaluatePlayerEquipment 根据已加载的配置评估玩家装备
 // equipped: map[steamID]interface{}，每个 interface{} 可以是 []string 或 []interface{}
-// cfg: 已加载 EquipmentConfig 对象
 // 返回 map[ruleName][]steamID
 func EvaluatePlayerEquipment(equipped map[string]interface{}) map[string][]string {
 	result := make(map[string][]string)
 
 	if eqiupCfg == nil || len(eqiupCfg.Sections) == 0 {
-		fmt.Println("[EvaluatePlayerEquipment] 配置为空或未加载")
+		pedebug("[EvaluatePlayerEquipment] 配置为空或未加载")
 		return result
 	}
 
@@ -85,7 +94,7 @@ func EvaluatePlayerEquipment(equipped map[string]interface{}) map[string][]strin
 			continue
 		}
 		sectionName := section.Name()
-		fmt.Println("----- 处理配置段:", sectionName, "-----")
+		pedebug("----- 处理配置段: %s -----", sectionName)
 
 		// 安全读取每个字段
 		caUnEquipts := parseList(section.Key("CaUnEquipt").String())
@@ -93,27 +102,27 @@ func EvaluatePlayerEquipment(equipped map[string]interface{}) map[string][]strin
 		unEquipts := parseList(section.Key("UnEquipts").String())
 		equipts := parseList(section.Key("Equipts").String())
 
-		fmt.Println("配置段条件 - CaUnEquipts:", caUnEquipts)
-		fmt.Println("配置段条件 - CaEquipts:", caEquipts)
-		fmt.Println("配置段条件 - UnEquipts:", unEquipts)
-		fmt.Println("配置段条件 - Equipts:", equipts)
+		pedebug("配置段条件 - CaUnEquipts: %v", caUnEquipts)
+		pedebug("配置段条件 - CaEquipts: %v", caEquipts)
+		pedebug("配置段条件 - UnEquipts: %v", unEquipts)
+		pedebug("配置段条件 - Equipts: %v", equipts)
 
 		var matchedPlayers []string
 		for steamID, itemsInterface := range equipped {
-			fmt.Println("正在评估玩家:", steamID)
+			pedebug("正在评估玩家: %s", steamID)
 			itemsList := toStringSlice(itemsInterface)
-			fmt.Println("玩家物品列表:", itemsList)
+			pedebug("玩家物品列表: %v", itemsList)
 
 			if matchPlayer(itemsList, caUnEquipts, caEquipts, unEquipts, equipts) {
-				fmt.Println("玩家符合条件，加入结果:", steamID)
+				pedebug("玩家符合条件，加入结果: %s", steamID)
 				matchedPlayers = append(matchedPlayers, steamID)
 			} else {
-				fmt.Println("玩家不符合条件:", steamID)
+				pedebug("玩家不符合条件: %s", steamID)
 			}
 		}
 
 		result[sectionName] = matchedPlayers
-		fmt.Println("配置段处理完成:", sectionName, "符合条件玩家:", matchedPlayers)
+		pedebug("配置段处理完成: %s 符合条件玩家: %v", sectionName, matchedPlayers)
 	}
 
 	return result
@@ -155,58 +164,81 @@ func parseList(s string) []string {
 
 // matchPlayer 判断单个玩家是否符合条件，并打印 debug 信息
 func matchPlayer(items, caUnEquipts, caEquipts, unEquipts, equipts []string) bool {
-	fmt.Println("----- matchPlayer 调试开始 -----")
-	fmt.Println("原始玩家物品:", items)
-	fmt.Println("CaUnEquipts:", caUnEquipts)
-	fmt.Println("CaEquipts:", caEquipts)
-	fmt.Println("UnEquipts:", unEquipts)
-	fmt.Println("Equipts:", equipts)
+	pedebug("----- matchPlayer 调试开始 -----")
+	pedebug("原始玩家物品: %v", items)
+	pedebug("CaUnEquipts: %v", caUnEquipts)
+	pedebug("CaEquipts: %v", caEquipts)
+	pedebug("UnEquipts: %v", unEquipts)
+	pedebug("Equipts: %v", equipts)
 
 	if len(caUnEquipts) > 0 && containsAnyCA(caUnEquipts, items) {
-		fmt.Println("不符合条件: 玩家装备包含 CaUnEquipts 中物品")
+		pedebug("不符合条件: 玩家装备包含 CaUnEquipts 中物品")
 		return false
 	}
 	if len(caEquipts) > 0 && !containsAnyCA(caEquipts, items) {
-		fmt.Println("不符合条件: 玩家装备不包含任何 CaEquipts 中物品")
+		pedebug("不符合条件: 玩家装备不包含任何 CaEquipts 中物品")
 		return false
 	}
 	if len(unEquipts) > 0 && containsAny(unEquipts, items) {
-		fmt.Println("不符合条件: 玩家装备包含 UnEquipts 中物品")
+		pedebug("不符合条件: 玩家装备包含 UnEquipts 中物品")
 		return false
 	}
 	if len(equipts) > 0 && !containsAny(equipts, items) {
-		fmt.Println("不符合条件: 玩家装备不包含任何 Equipts 中物品")
+		pedebug("不符合条件: 玩家装备不包含任何 Equipts 中物品")
 		return false
 	}
 
-	fmt.Println("玩家符合条件 ✅")
-	fmt.Println("----- matchPlayer 调试结束 -----")
+	pedebug("玩家符合条件 ✅")
+	pedebug("----- matchPlayer 调试结束 -----")
 	return true
 }
 
+// 精确匹配列表中的物品（任意匹配）
+// 只要 items 中任意一个元素与 targets 中的任意一个目标匹配（加 "_ES" 后），即返回 true
 func containsAny(targets []string, items []string) bool {
+	pedebug("[containsAny] 开始匹配检查: items=%v, targets=%v", items, targets)
+
 	for _, item := range items {
 		for _, t := range targets {
-			t += "_ES"
-			if item == t {
+			tWithSuffix := t + "_ES"
+			//pedebug("[containsAny] 检查 item=%s 与 target=%s", item, tWithSuffix)
+
+			if item == tWithSuffix {
+				pedebug("[containsAny] ✅ 匹配成功: %s == %s", item, tWithSuffix)
 				return true
 			}
 		}
 	}
+
+	pedebug("[containsAny] ❌ 未发现匹配项 (items=%v, targets=%v)", items, targets)
 	return false
 }
 
+// 根据物品类别判断（任意匹配）
+// 只要 items 中任意一个元素属于指定类别（targets）下的任意物品，即返回 true
 func containsAnyCA(targets []string, items []string) bool {
+	pedebug("[containsAnyCA] 开始类别匹配检查: items=%v, categories=%v", items, targets)
+
 	for _, item := range items {
 		for _, t := range targets {
-			for _, caItem := range itemsDB[t] {
-				//fmt.Println(item, "-", caItem)
-				caItem += "_ES"
-				if item == caItem {
+			caList, exists := itemsDB[t]
+			if !exists {
+				pedebug("[containsAnyCA] ⚠️ category=%s 不存在于 itemsDB", t)
+				continue
+			}
+
+			for _, caItem := range caList {
+				caItemWithSuffix := caItem + "_ES"
+				//pedebug("[containsAnyCA] 检查 item=%s 与 caItem=%s (类别=%s)", item, caItemWithSuffix, t)
+
+				if item == caItemWithSuffix {
+					pedebug("[containsAnyCA] ✅ 匹配成功: %s 属于类别 %s", item, t)
 					return true
 				}
 			}
 		}
 	}
+
+	pedebug("[containsAnyCA] ❌ 未发现匹配项 (items=%v, categories=%v)", items, targets)
 	return false
 }

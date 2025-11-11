@@ -29,8 +29,9 @@ type Skill struct {
 
 type PlayerFullInfo struct {
 	PlayerRow
-	Attributes map[string]float64
-	Skills     []Skill
+	Attributes    map[string]float64
+	Skills        []Skill
+	GenderAndSize map[string]float64
 }
 
 var attributeNames = []string{

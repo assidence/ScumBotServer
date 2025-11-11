@@ -49,6 +49,6 @@ func StatusMonitor(sendChannel chan []byte, initChan chan struct{}) {
 	close(initChan)
 	for {
 		SendOnline(sendChannel)
-		time.Sleep(1 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 }

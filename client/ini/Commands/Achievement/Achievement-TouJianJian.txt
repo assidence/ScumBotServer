@@ -1,0 +1,1 @@
+SpawnItem MemoryModule_Level1 1 Location %s
