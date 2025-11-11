@@ -8,6 +8,7 @@ import (
 	"ScumBotServer/client/execModules/DidiCar"
 	"ScumBotServer/client/execModules/Kits"
 	"ScumBotServer/client/execModules/LogWatcher"
+	"ScumBotServer/client/execModules/PlayersInfo"
 	"ScumBotServer/client/execModules/Prefix"
 	"ScumBotServer/client/execModules/StatusMonitor"
 	"ScumBotServer/client/execModules/scheduleTasks"
@@ -25,6 +26,8 @@ var PrefixChan = make(chan map[string]interface{}, 100)
 var AnnouncerChan = make(chan map[string]interface{}, 100)
 
 var AchievementChan = make(chan map[string]interface{}, 100)
+
+var PlayersInfoChan = make(chan map[string]interface{}, 100)
 
 var chatChan = make(chan string, 100)
 
@@ -76,6 +79,11 @@ func moduleInit(regCommand *map[string][]string, sendChannel chan []byte) {
 	<-initChan
 	fmt.Println("[Module] 广播模组已加载")
 
+	initChan = make(chan struct{})
+	go PlayersInfo.PlayersInfo(regCommand, PlayersInfoChan, AchievementChan, chatChan, initChan)
+	<-initChan
+	fmt.Println("[Module] 玩家状态解释器已加载")
+
 	//======================================================================================
 	initChan = make(chan struct{})
 	go StatusMonitor.StatusMonitor(sendChannel, initChan)
@@ -119,10 +127,16 @@ func commandSelecter(command map[string]interface{}, regCommand *map[string][]st
 			case "Achievement":
 				AchievementChan <- command
 				return
+			case "PlayersInfo":
+				PlayersInfoChan <- command
+				return
 			}
 		}
 	}
 	fmt.Printf("[Module] Command not Found!:%s\n", command["command"].(string))
+	for moduleName, moduleCommands := range *regCommand {
+		fmt.Println(moduleName, moduleCommands)
+	}
 }
 
 // commandSendToChat send and execute command to chat

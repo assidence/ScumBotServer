@@ -122,16 +122,16 @@ func (lw *LogWatcher) parseBlock(block []string) {
 			tempPlayers := make(map[string]Player)
 			for _, match := range matches {
 				//fmt.Println("debug3")
-				if len(match) == 9 { //第0项是完整匹配 后面是捕获组
+				if len(match) == 10 { //第0项是完整匹配 后面是捕获组
 					player := Player{
 						Name:           match[1],
-						SteamID:        match[2],
-						Fame:           match[3],
-						AccountBalance: match[4],
-						GoldBalance:    match[5],
-						LocationX:      match[6],
-						LocationY:      match[7],
-						LocationZ:      match[8],
+						SteamID:        match[3],
+						Fame:           match[4],
+						AccountBalance: match[5],
+						GoldBalance:    match[6],
+						LocationX:      match[7],
+						LocationY:      match[8],
+						LocationZ:      match[9],
 					}
 					tempPlayers[player.SteamID] = player
 					lw.mu.Lock()

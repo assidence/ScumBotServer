@@ -197,15 +197,15 @@ func getPlayerFullInfoOnce(db *sql.DB, steamID string) (*PlayerFullInfo, error) 
 	}, nil
 }
 
-var info *PlayerFullInfo
+//var info *PlayerFullInfo
 
 // 获取“头尖尖”玩家列表：BaseStrength≥7.9 且 BaseDexterity≥4.9
 func GetStrongPlayers(db *sql.DB, userIDs []string) []string {
 	var strongPlayers []string
 
 	for _, steamID := range userIDs {
-		var err error
-		info, err = getPlayerFullInfoOnce(db, steamID)
+		//var err error
+		info, err := getPlayerFullInfoOnce(db, steamID)
 		if err != nil {
 			// 忽略未找到或读取失败的玩家（比如离线、数据库未同步等）
 			continue
@@ -220,4 +220,20 @@ func GetStrongPlayers(db *sql.DB, userIDs []string) []string {
 	}
 
 	return strongPlayers
+}
+
+// 根据多个 SteamID 查询玩家信息
+func GetPlayerFullInfoByList(db *sql.DB, userIDs []string) map[string]*PlayerFullInfo {
+	result := make(map[string]*PlayerFullInfo)
+
+	for _, steamID := range userIDs {
+		info, err := getPlayerFullInfoOnce(db, steamID)
+		if err != nil {
+			// 忽略未找到或读取失败的玩家
+			continue
+		}
+		result[steamID] = info
+	}
+
+	return result
 }

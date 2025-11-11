@@ -65,7 +65,7 @@ func CommandHandler(didiCarChan chan map[string]interface{}, cfg *execModules.Co
 			chatChan <- fmt.Sprintf("玩家%s：%s", pnickName, msg)
 			continue
 		}
-		//PMbucket.Consume(command["steamID"].(string), command["command"].(string))
+		PMbucket.Consume(command["steamID"].(string), command["command"].(string))
 		commandLines = cfg.Data[command["command"].(string)]["Command"].([]string)
 		for _, cfgCommand := range commandLines {
 			cfglines := Public.CommandSelecterInterface.Selecter(command["steamID"].(string), cfgCommand)

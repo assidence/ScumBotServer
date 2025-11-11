@@ -1,7 +1,6 @@
 package main
 
 import (
-	"ScumBotServer/client/execModules"
 	"bufio"
 	"fmt"
 	"os"
@@ -75,10 +74,10 @@ func main() {
 	var sendChannel = make(chan []byte)
 	re := regexp.MustCompile(`\{[^}]*\}`)
 	go commandExecuter(execCommand, sendChannel)
-	go execModules.FocusWindows("SCUM  ")
+	//go execModules.FocusWindows("SCUM  ")
 
 	// 启动 AHK exe
-	ahkProcess = startAutoReConnectEXE()
+	//ahkProcess = startAutoReConnectEXE()
 	if ahkProcess == nil {
 		fmt.Println("⚠️ AHK exe 启动失败，将继续运行主程序")
 	}

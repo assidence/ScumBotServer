@@ -304,15 +304,15 @@ func (m *Manager) CanExecute(playerID, command string) (bool, string) {
 		}
 	}
 	//b.mu.Unlock()
-	m.Consume(playerID, command)
+	//m.Consume(playerID, command)
 	return true, "允许执行"
 }
 
 // Consume 在允许执行后调用：记录使用并保存
 func (m *Manager) Consume(playerID, command string) {
 	b := m.getOrCreateBucket(playerID, command)
-	//b.mu.Lock()
-	//defer b.mu.Unlock()
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	b.LastUsed = time.Now()
 	b.DailyCount++
 	b.TotalCount++

@@ -31,6 +31,6 @@ func HttpClient(address string, msgChan chan string) {
 			break
 		}
 
-		fmt.Println("[Network] Sent:", l)
+		//fmt.Println("[Network] Sent:", l)
 	}
 }
