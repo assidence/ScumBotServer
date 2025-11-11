@@ -104,10 +104,11 @@ func PlayersInfo(regCommand *map[string][]string, PlayersInfoChan chan map[strin
 
 	fmt.Println("[PlayersInfo] 读取到的物品id:")
 	for c, _ := range itemsDB {
-		fmt.Print(c, ",", "\n")
+		fmt.Print(c, ",")
 		//fmt.Printf("=====%s=====\n", c)
 		//fmt.Println(ilist)
 	}
+	fmt.Println()
 
 	go CommandHandler(PlayersInfoChan, AchievementChan, chatChan)
 	close(initChan)

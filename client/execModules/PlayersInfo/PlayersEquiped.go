@@ -187,6 +187,7 @@ func matchPlayer(items, caUnEquipts, caEquipts, unEquipts, equipts []string) boo
 func containsAny(targets []string, items []string) bool {
 	for _, item := range items {
 		for _, t := range targets {
+			t += "_ES"
 			if item == t {
 				return true
 			}
@@ -199,7 +200,8 @@ func containsAnyCA(targets []string, items []string) bool {
 	for _, item := range items {
 		for _, t := range targets {
 			for _, caItem := range itemsDB[t] {
-				fmt.Println(item, "-", caItem)
+				//fmt.Println(item, "-", caItem)
+				caItem += "_ES"
 				if item == caItem {
 					return true
 				}
