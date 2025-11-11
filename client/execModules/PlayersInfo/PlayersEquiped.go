@@ -175,15 +175,15 @@ func matchPlayer(items, caUnEquipts, caEquipts, unEquipts, equipts []string) boo
 		pedebug("不符合条件: 玩家装备包含 CaUnEquipts 中物品")
 		return false
 	}
-	if len(caEquipts) > 0 && !containsAnyCA(caEquipts, items) {
-		pedebug("不符合条件: 玩家装备不包含任何 CaEquipts 中物品")
+	if len(caEquipts) > 0 && !containsAllCA(caEquipts, items) {
+		pedebug("不符合条件: 玩家装备不包含某一 CaEquipts 中物品")
 		return false
 	}
 	if len(unEquipts) > 0 && containsAny(unEquipts, items) {
 		pedebug("不符合条件: 玩家装备包含 UnEquipts 中物品")
 		return false
 	}
-	if len(equipts) > 0 && !containsAny(equipts, items) {
+	if len(equipts) > 0 && !containsAll(equipts, items) {
 		pedebug("不符合条件: 玩家装备不包含任何 Equipts 中物品")
 		return false
 	}
@@ -241,4 +241,73 @@ func containsAnyCA(targets []string, items []string) bool {
 
 	pedebug("[containsAnyCA] ❌ 未发现匹配项 (items=%v, categories=%v)", items, targets)
 	return false
+}
+
+// containsAllCA 检查玩家是否满足所有类别的装备条件（例如 Head 和 Mask 都要有）
+// itemsDB: map[string][]string — 物品类别数据库
+// targets: []string — 需要匹配的类别（如 ["Head", "Mask"]）
+// items: []string — 玩家实际持有的物品
+func containsAllCA(targets []string, items []string) bool {
+	pedebug("[containsAllCA] 开始检查类别匹配")
+	pedebug("[containsAllCA] 目标类别: %v", targets)
+	pedebug("[containsAllCA] 玩家物品: %v", items)
+
+	for _, t := range targets {
+		pedebug("[containsAllCA] 检查类别: %s", t)
+		matchFound := false
+
+		caItems, ok := itemsDB[t]
+		if !ok {
+			pedebug("[containsAllCA] ⚠️ category '%s' 不存在于 itemsDB", t)
+			return false
+		}
+
+		for _, caItem := range caItems {
+			caItemWithSuffix := caItem + "_ES"
+			for _, item := range items {
+				if item == caItemWithSuffix {
+					pedebug("[containsAllCA] ✅ 匹配成功: %s 属于类别 %s", item, t)
+					matchFound = true
+					break
+				}
+			}
+			if matchFound {
+				break
+			}
+		}
+
+		if !matchFound {
+			pedebug("[containsAllCA] ❌ 未找到类别匹配: %s", t)
+			return false
+		}
+	}
+
+	pedebug("[containsAllCA] ✅ 所有类别均匹配成功")
+	return true
+}
+
+// containsAll 检查玩家是否拥有目标列表中的所有物品
+func containsAll(targets []string, items []string) bool {
+	pedebug("[containsAll] 开始检查物品匹配")
+	pedebug("[containsAll] 目标物品: %v", targets)
+	pedebug("[containsAll] 玩家物品: %v", items)
+
+	for _, t := range targets {
+		tWithSuffix := t + "_ES"
+		found := false
+		for _, item := range items {
+			if item == tWithSuffix {
+				pedebug("[containsAll] ✅ 匹配成功: %s", tWithSuffix)
+				found = true
+				break
+			}
+		}
+		if !found {
+			pedebug("[containsAll] ❌ 缺少必要物品: %s", tWithSuffix)
+			return false
+		}
+	}
+
+	pedebug("[containsAll] ✅ 玩家拥有所有必要物品")
+	return true
 }
