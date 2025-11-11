@@ -2,59 +2,79 @@ package DBwatcher
 
 import (
 	"database/sql"
-	"fmt"
-	"strings"
 )
 
-// QueryEquippedItems 查询指定 SteamIDs 的玩家装备信息。
-// 返回值：map[steamID][]装备名
-func QueryEquippedItems(db *sql.DB, steamIDs []string) (map[string][]string, error) {
+// QueryEquippedItemsBySteamIDs 查询指定 SteamIDs 的玩家装备信息。
+// 返回 map[steamID][]装备名称
+func QueryEquippedItemsBySteamIDs(db *sql.DB, steamIDs []string) (map[string][]string, error) {
 	result := make(map[string][]string)
 
-	if len(steamIDs) == 0 {
-		return result, nil
-	}
+	for _, steamID := range steamIDs {
+		result[steamID] = []string{} // 预先创建空列表
+		//fmt.Printf("\n--- 开始处理 SteamID: %s ---\n", steamID)
 
-	// 1️⃣ 构建动态占位符 (?, ?, ?, ...)
-	placeholders := make([]string, len(steamIDs))
-	args := make([]interface{}, len(steamIDs))
-	for i, id := range steamIDs {
-		placeholders[i] = "?"
-		args[i] = id
-	}
+		var userProfileID, prisonerID, entityID int
 
-	// 2️⃣ 构建查询语句
-	query := fmt.Sprintf(`
-		SELECT 
-			user_profile.user_id AS steam_id,
-			entity.class AS item_name
-		FROM prisoner_inventory_equipped_item
-		INNER JOIN prisoner_entity ON prisoner_inventory_equipped_item.prisoner_entity_id = prisoner_entity.entity_id
-		INNER JOIN prisoner ON prisoner_entity.prisoner_id = prisoner.id
-		INNER JOIN entity ON prisoner_inventory_equipped_item.item_entity_id = entity.id
-		INNER JOIN user_profile ON user_profile.id = prisoner.user_profile_id
-		WHERE user_profile.user_id IN (%s)
-	`, strings.Join(placeholders, ","))
-
-	// 3️⃣ 执行查询
-	rows, err := db.Query(query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("查询失败: %v", err)
-	}
-	defer rows.Close()
-
-	// 4️⃣ 解析结果
-	for rows.Next() {
-		var steamID, itemName string
-		if err := rows.Scan(&steamID, &itemName); err != nil {
-			return nil, fmt.Errorf("解析结果出错: %v", err)
+		// Step 1: 查询 user_profile.id
+		err := db.QueryRow(`SELECT id FROM user_profile WHERE user_id = ?`, steamID).Scan(&userProfileID)
+		if err != nil {
+			//fmt.Printf("[WARN] 找不到 user_profile.id (steamID=%s): %v\n", steamID, err)
+			continue
 		}
-		result[steamID] = append(result[steamID], itemName)
+		//fmt.Printf("[INFO] user_profile.id = %d\n", userProfileID)
+
+		// Step 2: 查询 prisoner.id
+		err = db.QueryRow(`SELECT id FROM prisoner WHERE user_profile_id = ?`, userProfileID).Scan(&prisonerID)
+		if err != nil {
+			//fmt.Printf("[WARN] 找不到 prisoner.id (user_profile_id=%d): %v\n", userProfileID, err)
+			continue
+		}
+		//fmt.Printf("[INFO] prisoner.id = %d\n", prisonerID)
+
+		// Step 3: 查询 prisoner_entity.entity_id
+		err = db.QueryRow(`SELECT entity_id FROM prisoner_entity WHERE prisoner_id = ?`, prisonerID).Scan(&entityID)
+		if err != nil {
+			//fmt.Printf("[WARN] 找不到 prisoner_entity.entity_id (prisoner_id=%d): %v\n", prisonerID, err)
+			continue
+		}
+		//fmt.Printf("[INFO] prisoner_entity.entity_id = %d\n", entityID)
+
+		// Step 4: 查询所有装备 item_entity_id
+		itemRows, err := db.Query(`SELECT item_entity_id FROM prisoner_inventory_equipped_item WHERE prisoner_entity_id = ?`, entityID)
+		if err != nil {
+			//fmt.Printf("[ERROR] 查询 prisoner_inventory_equipped_item 出错: %v\n", err)
+			continue
+		}
+
+		itemIDs := []int{}
+		for itemRows.Next() {
+			var itemID int
+			if err := itemRows.Scan(&itemID); err == nil {
+				itemIDs = append(itemIDs, itemID)
+			}
+		}
+		itemRows.Close()
+
+		if len(itemIDs) == 0 {
+			//fmt.Printf("[INFO] 玩家 %s 没有任何装备。\n", steamID)
+			continue
+		}
+
+		//fmt.Printf("[INFO] 找到 %d 个装备 item_entity_id: %v\n", len(itemIDs), itemIDs)
+
+		// Step 5: 根据 item_entity_id 查询 entity.class
+		for _, itemID := range itemIDs {
+			var itemClass string
+			err := db.QueryRow(`SELECT class FROM entity WHERE id = ?`, itemID).Scan(&itemClass)
+			if err != nil {
+				//fmt.Printf("[WARN] 找不到 entity.class (id=%d): %v\n", itemID, err)
+				continue
+			}
+			result[steamID] = append(result[steamID], itemClass)
+			//fmt.Printf("[OK] 玩家 %s 装备物品: %s\n", steamID, itemClass)
+		}
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("遍历结果出错: %v", err)
-	}
-
+	//fmt.Println("\n查询完成 ✅")
 	return result, nil
 }

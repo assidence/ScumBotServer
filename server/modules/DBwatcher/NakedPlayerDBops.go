@@ -9,7 +9,8 @@ import (
 
 // OpenDBRO 只读打开数据库
 func OpenDBRO(dbPath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "file:"+dbPath+"?mode=ro&immutable=1")
+	dsn := fmt.Sprintf("file:%s?mode=ro&_journal_mode=WAL&_busy_timeout=2000", dbPath)
+	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
 		// 如果 immutable 不被支持，尝试普通只读模式
 		fmt.Println("[DBwatcher-Warnning] immutable 不被支持，回退为 mode=ro ", err)

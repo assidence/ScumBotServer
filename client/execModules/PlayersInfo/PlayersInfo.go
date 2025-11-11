@@ -52,13 +52,14 @@ func CommandHandler(PlayersInfoChan chan map[string]interface{}, AchievementChan
 			}
 		}
 		if cmdType == "PlayerEquipmentInfo" {
-			players := command["commandArgs"].([]string)
-			fmt.Println(players)
+			players := command["commandArgs"].(map[string]interface{})
+			result := EvaluatePlayerEquipment(players)
 		}
 	}
 }
 
 var pcGroups map[string]*PlayerConditionGroup
+var items map[string][]string
 
 // 主入口
 func PlayersInfo(regCommand *map[string][]string, PlayersInfoChan chan map[string]interface{}, AchievementChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
@@ -69,7 +70,16 @@ func PlayersInfo(regCommand *map[string][]string, PlayersInfoChan chan map[strin
 	}
 
 	CommandRegister(cfg, regCommand)
+
 	pcGroups = LoadPlayerCondition("./ini/PlayersInfo/PlayersCondition.ini")
+	items, _ = LoadClothesItems("./db/itemsDB.db")
+
+	fmt.Println("[PlayersInfo] 读取到的物品id:")
+	for c, ilist := range items {
+		fmt.Printf("=====%s=====\n", c)
+		fmt.Println(ilist)
+	}
+
 	go CommandHandler(PlayersInfoChan, AchievementChan, chatChan)
 	close(initChan)
 }
