@@ -3,7 +3,11 @@ package CommandSelecter
 import (
 	"ScumBotServer/client/execModules/Public"
 	"fmt"
+	"math/rand"
 	"regexp"
+	"strconv"
+	"strings"
+	"time"
 )
 
 func Selecter(steamID string, cfgCommand string) []string {
@@ -72,6 +76,20 @@ func Selecter(steamID string, cfgCommand string) []string {
 		}
 	case "SpawnInventoryFullOf":
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID))
+	case "SpawnRandomItem":
+		parts := strings.Split(cfgCommand, " ")
+		// 跳过第一个 "SpawnRandomItem"
+		itemsPart := parts[1]
+		countStr := parts[len(parts)-1]
+		count, _ := strconv.Atoi(countStr)
+		// 分割物品名
+		items := strings.Split(itemsPart, "::")
+		// 随机选择
+		rand.Seed(time.Now().UnixNano())
+		for i := 0; i < count; i++ {
+			cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf("SpawnItem %s 1 Location %s", items[rand.Intn(len(items))], steamID))
+		}
+
 	default:
 		//fmt.Println("[ERROR-CommandSelecter]->Error:无法匹配命令 ", cmd)
 		cfgChat = append(cfgChat, cfgCommand)

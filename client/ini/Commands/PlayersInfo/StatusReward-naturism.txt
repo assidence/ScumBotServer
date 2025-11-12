@@ -1,0 +1,2 @@
+SpawnItem MemoryModule_Level1 1 Location %s
+SpawnRandomItem Christmas_Present_AK15_01::Christmas_Present_AKS_74U_01::Christmas_Present_AS_Val_01::Christmas_Present_Kar98_01::Christmas_Present_M1_01::Christmas_Present_M16A4_01::Christmas_Present_MAC10_01::Christmas_Present_MK18_01::Christmas_Present_SCAR_L_01::Christmas_Present_SVD_01::Christmas_Present_UMP_01 1

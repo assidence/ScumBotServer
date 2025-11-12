@@ -1,1 +1,2 @@
 SpawnItem Underpants_01 1 Location %s
+SpawnItem Energy_Drink_Red_Ghoul 1 Location %s

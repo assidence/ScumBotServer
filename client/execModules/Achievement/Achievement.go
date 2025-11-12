@@ -270,20 +270,7 @@ func (r *BehaviorRecorder) AchievementUnlockAchievement(steamID string, achv Ach
 
 // 分流行为记录
 func AchievementRecordSelecter(steamID string, action string, target string, targetQuantity int, recorder *BehaviorRecorder, achv []Achievement, chatChan chan string) {
-	/*
-		switch action {
-		case "Killer", "Died":
-			recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
-		case "purchased":
-			recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
-		case "sold":
-			recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
-		case "equip":
-			recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
-		case "skills":
-			recorder.AchievementRecordBehaviorDetail(steamID, action, target, targetQuantity)
-		}
-	*/
+
 	triggered := false
 
 	for _, a := range achv {

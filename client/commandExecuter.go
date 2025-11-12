@@ -29,7 +29,7 @@ var AchievementChan = make(chan map[string]interface{}, 100)
 
 var PlayersInfoChan = make(chan map[string]interface{}, 100)
 
-var chatChan = make(chan string, 100)
+var chatChan = make(chan string, 1024)
 
 // moduleInit initiation the command function module
 func moduleInit(regCommand *map[string][]string, sendChannel chan []byte) {
@@ -82,7 +82,7 @@ func moduleInit(regCommand *map[string][]string, sendChannel chan []byte) {
 	initChan = make(chan struct{})
 	go PlayersInfo.PlayersInfo(regCommand, PlayersInfoChan, AchievementChan, chatChan, initChan)
 	<-initChan
-	fmt.Println("[Module] 玩家状态解释器已加载")
+	fmt.Println("[Module] 玩家状态解释及奖励器已加载")
 
 	//======================================================================================
 	initChan = make(chan struct{})

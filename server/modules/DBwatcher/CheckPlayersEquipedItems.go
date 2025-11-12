@@ -49,7 +49,7 @@ func QueryEquippedItemsBySteamIDs(db *sql.DB, steamIDs []string) (map[string][]s
 		itemIDs := []int{}
 		for itemRows.Next() {
 			var itemID int
-			if err := itemRows.Scan(&itemID); err == nil {
+			if err = itemRows.Scan(&itemID); err == nil {
 				itemIDs = append(itemIDs, itemID)
 			}
 		}
@@ -65,8 +65,8 @@ func QueryEquippedItemsBySteamIDs(db *sql.DB, steamIDs []string) (map[string][]s
 		// Step 5: 根据 item_entity_id 查询 entity.class
 		for _, itemID := range itemIDs {
 			var itemClass string
-			err := db.QueryRow(`SELECT class FROM entity WHERE id = ?`, itemID).Scan(&itemClass)
-			if err != nil {
+			err = db.QueryRow(`SELECT class FROM entity WHERE id = ?`, itemID).Scan(&itemClass)
+			if err == nil {
 				//fmt.Printf("[WARN] 找不到 entity.class (id=%d): %v\n", itemID, err)
 				continue
 			}

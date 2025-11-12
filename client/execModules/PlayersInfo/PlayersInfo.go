@@ -33,6 +33,7 @@ func CommandHandler(PlayersInfoChan chan map[string]interface{}, AchievementChan
 			if len(result) == 0 {
 				continue
 			}
+			//RManager.TriggerRewards(result)
 			PlayersAttributeInfoexecData := map[string]interface{}{
 				"steamID":  "000000",
 				"nickName": "System",
@@ -59,6 +60,7 @@ func CommandHandler(PlayersInfoChan chan map[string]interface{}, AchievementChan
 			if len(result) == 0 {
 				continue
 			}
+			RManager.TriggerRewards(result)
 			PlayerEquipmentInfoexecData := map[string]interface{}{
 				"steamID":  "000000",
 				"nickName": "System",
@@ -85,6 +87,7 @@ func CommandHandler(PlayersInfoChan chan map[string]interface{}, AchievementChan
 var pcGroups map[string]*PlayerConditionGroup
 var itemsDB map[string][]string
 var eqiupCfg *EquipmentConfig
+var RManager *RewardManager
 
 // 主入口
 func PlayersInfo(regCommand *map[string][]string, PlayersInfoChan chan map[string]interface{}, AchievementChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
@@ -112,6 +115,11 @@ func PlayersInfo(regCommand *map[string][]string, PlayersInfoChan chan map[strin
 		//fmt.Println(ilist)
 	}
 	fmt.Println()
+
+	RManager, err = NewRewardManager("./ini/PlayersInfo/StatusReward.ini", chatChan, false)
+	if err != nil {
+		fmt.Println("[PlayersInfo] RewardManager 初始化失败", err)
+	}
 
 	go CommandHandler(PlayersInfoChan, AchievementChan, chatChan)
 	close(initChan)
