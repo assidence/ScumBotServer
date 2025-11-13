@@ -1,2 +1,2 @@
-SpawnItem Milk 4 Location %s
+SpawnItem Milk 2 Location %s
 SpawnRandomItem ActivatedCharcoal_02::Antibiotics_02::AntiburnGel::Antiparasitics_02::AtropineInjection::Emergency_Bandage_Big::Hemostatic_Dressing::IntEA_Level1::Painkillers_02::PotassiumIodide_PilLs_02::Vitamins_02 3
