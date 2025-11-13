@@ -1,0 +1,13 @@
+#spawnitem BlackPepper 1
+#spawnitem Butter 1
+#spawnitem Icing_Sugar 1
+#spawnitem Ketchup 1
+#spawnitem Mayonnaise 1
+#spawnitem Mustard 1
+#spawnitem SeaSalt_01 1
+#spawnitem SoySauce 1
+#spawnitem SpicesMix_01 1
+#spawnitem Sugar 1
+#spawnitem Tea_Pack 1
+#spawnitem VegetableOil 1
+#spawnitem Vinegar 1
