@@ -60,7 +60,7 @@ func IncomeMessagesSelector(imcomech chan IMServer2.Message, DBWincomech chan ma
 		case "onlinePlayers":
 			DBWincomech <- result
 
-			fmt.Println(now, "[IncomeMessageSelector] 识别为DBWatcher任务")
+			//fmt.Println(now, "[IncomeMessageSelector] 识别为DBWatcher任务")
 		default:
 			fmt.Println(now, "[IncomeMessageSelector] 无法识别任务类型", result["type"])
 		}
@@ -100,7 +100,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("[Success]Kill log founded!%s(%s)\n]", filePath, newsetTime)
+	fmt.Printf("[Success]Kill log founded!%s(%s)\n", filePath, newsetTime)
 	var KillCommand = modules2.ReadCommand(filePath)
 	fmt.Printf("[Success]Kill log Loaded!\n")
 

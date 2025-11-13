@@ -1,0 +1,2 @@
+SpawnItem ChocolateCandy_10 1 Location %s
+SpawnItem ChocolateCandy_11 1 Location %s

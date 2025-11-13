@@ -33,6 +33,7 @@ func CommandHandler(regstring string, commch <-chan string, execch chan string) 
 			execData["commandArgs"] = strings.Join(com[1:], " ")
 			jsonByte = sequenceJson(&execData)
 			execch <- string(jsonByte)
+			fmt.Printf("[玩家命令]%s\n", line)
 		} else {
 			fmt.Printf("[玩家聊天]%s\n", line)
 		}

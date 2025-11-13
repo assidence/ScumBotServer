@@ -66,7 +66,7 @@ func QueryEquippedItemsBySteamIDs(db *sql.DB, steamIDs []string) (map[string][]s
 		for _, itemID := range itemIDs {
 			var itemClass string
 			err = db.QueryRow(`SELECT class FROM entity WHERE id = ?`, itemID).Scan(&itemClass)
-			if err == nil {
+			if err != nil {
 				//fmt.Printf("[WARN] 找不到 entity.class (id=%d): %v\n", itemID, err)
 				continue
 			}
