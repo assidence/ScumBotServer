@@ -134,9 +134,6 @@ func commandSelecter(command map[string]interface{}, regCommand *map[string][]st
 		}
 	}
 	fmt.Printf("[Module] Command not Found!:%s\n", command["command"].(string))
-	for moduleName, moduleCommands := range *regCommand {
-		fmt.Println(moduleName, moduleCommands)
-	}
 }
 
 // commandSendToChat send and execute command to chat
