@@ -89,6 +89,10 @@ func Selecter(steamID string, cfgCommand string) []string {
 		for i := 0; i < count; i++ {
 			cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf("SpawnItem %s 1 Location %s", items[rand.Intn(len(items))], steamID))
 		}
+	case "Sun":
+		cfgChat = append(cfgChat, commandPrefix+"SetWeather 0")
+	case "Rain":
+		cfgChat = append(cfgChat, commandPrefix+"SetWeather 1")
 
 	default:
 		//fmt.Println("[ERROR-CommandSelecter]->Error:无法匹配命令 ", cmd)
