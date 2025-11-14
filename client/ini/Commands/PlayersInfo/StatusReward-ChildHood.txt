@@ -1,2 +1,2 @@
-RewardEcho %s正在享受光屁股的快乐，并得到了附近幸存者和丧尸的投喂
+RewardEcho 玩家 %s 因为前卫的行为艺术受到附近的丧尸和幸存者的关注
 SpawnRandomItem Can01::Can02::Can03::Can04::CandyCorn_01::Candy_Bob::Cereal_BunnyStars::CheesePacked::Chips::Chips2::Chips3::Chips4::ChocolateCandy_01::ChocolateCandy_03::ChocolateCandy_04::ChocolateCandy_05::ChocolateCandy_06::ChocolateCandy_07::ChocolateCandy_08::ChocolateCandy_09::ChocolateCandy_10::ChocolateCandy_11::Crackers::GlassBottle01::GlassBottle02::GlassBottle03::GlassBottle04::MeatSnack_01::MeatSnack_02::Milk::PETBottle01::PETBottle02::PETBottle03::PETBottle04::Toaster_Pastries::Toaster_Pastries2::Vodka 5

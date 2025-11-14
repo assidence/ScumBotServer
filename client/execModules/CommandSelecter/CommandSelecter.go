@@ -95,7 +95,7 @@ func Selecter(steamID string, cfgCommand string) []string {
 		cfgChat = append(cfgChat, commandPrefix+"SetWeather 1")
 	case "RewardEcho":
 		EchoString := strings.Split(cfgCommand, " ")
-		cfgChat = append(cfgChat, fmt.Sprintf(EchoString[1], Public.LogWatcherInterface.Players[steamID].Name))
+		cfgChat = append(cfgChat, fmt.Sprintf(strings.Join(EchoString[1:], " "), Public.LogWatcherInterface.Players[steamID].Name))
 	default:
 		//fmt.Println("[ERROR-CommandSelecter]->Error:无法匹配命令 ", cmd)
 		cfgChat = append(cfgChat, cfgCommand)
