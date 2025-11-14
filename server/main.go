@@ -75,7 +75,7 @@ func main() {
 	}
 	fmt.Printf("[Success]Chat log founded!%s(%s)\n", filePath, newsetTime)
 	var PlayerCommand = modules2.ReadCommand(filePath)
-	fmt.Printf("[Success]Chat log Loaded!\n")
+	//fmt.Printf("[Success]Chat log Loaded!\n")
 
 	//found newset LoginLog
 	filePath, newsetTime, err = modules2.FindNewestLoginLog(os.Args[2])
@@ -84,7 +84,7 @@ func main() {
 	}
 	fmt.Printf("[Success]login log founded!%s(%s)\n", filePath, newsetTime)
 	var LoginCommand = modules2.ReadCommand(filePath)
-	fmt.Printf("[Success]login log Loaded!\n")
+	//fmt.Printf("[Success]login log Loaded!\n")
 
 	//found newset EconomyLog
 	filePath, newsetTime, err = modules2.FindNewestEconomyLog(os.Args[2])
@@ -93,7 +93,7 @@ func main() {
 	}
 	fmt.Printf("[Success]Economy log founded!%s(%s)\n", filePath, newsetTime)
 	var EconomyCommand = modules2.ReadCommand(filePath)
-	fmt.Printf("[Success]Economy log Loaded!\n")
+	//fmt.Printf("[Success]Economy log Loaded!\n")
 
 	//found newset KillEventLog
 	filePath, newsetTime, err = modules2.FindNewestKillEventLog(os.Args[2])
@@ -102,7 +102,7 @@ func main() {
 	}
 	fmt.Printf("[Success]Kill log founded!%s(%s)\n", filePath, newsetTime)
 	var KillCommand = modules2.ReadCommand(filePath)
-	fmt.Printf("[Success]Kill log Loaded!\n")
+	//fmt.Printf("[Success]Kill log Loaded!\n")
 
 	addr := fmt.Sprintf("0.0.0.0:%s", os.Args[1])
 	online := make(chan struct{})
