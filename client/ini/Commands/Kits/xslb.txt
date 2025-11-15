@@ -15,5 +15,6 @@ SpawnItem Bulletproof_Vest_01_05 1 Location %s
 SpawnItem Combat_Helmet_01 1 Location %s
 SpawnItem 2H_Tang_Dao 1 Location %s
 SpawnItem Weapon_AT4_HEAT 1 Location %s
+SpawnItem Cash 5 CashValue 10000 Location %s
 SpawnVehicle BPC_Laika 1 Location "X=%s Y=%s Z=%s"
 温馨提示：如果不小心卡在车里，请长按F 选择向前推动
