@@ -67,13 +67,10 @@ func Selecter(steamID string, cfgCommand string) []string {
 		cfgChat = append(cfgChat, commandPrefix+"ShutdownServer pretty please")
 	case "AddOnlineCurrency":
 		// 匹配 AddOnlineCurrency 后面跟的数字
-		re := regexp.MustCompile(`AddOnlineCurrency (\d+)`)
+		AddOnlineCurrencyRe := regexp.MustCompile(`AddOnlineCurrency (\d+)`)
 		// 替换为 ChangeCurrencyBalance Normal 数字 %s
-		output := re.ReplaceAllString(cfgCommand, "ChangeCurrencyBalance Normal $1 %s")
-		OnlinePlayers := Public.LogWatcherInterface.GetPlayers()
-		for steamid, _ := range OnlinePlayers {
-			cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(output, steamid))
-		}
+		output := AddOnlineCurrencyRe.ReplaceAllString(cfgCommand, "ChangeCurrencyBalanceToAllOnline Normal $1")
+		cfgChat = append(cfgChat, commandPrefix+output)
 	case "SpawnInventoryFullOf":
 		cfgChat = append(cfgChat, commandPrefix+fmt.Sprintf(cfgCommand, steamID))
 	case "SpawnRandomItem":
