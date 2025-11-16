@@ -103,7 +103,7 @@ SCUM_Auto(*) {
 
     ; ========================
     ; 2️⃣ 主菜单继续游戏
-    continuebtnExist := ImageSearch(&bx, &by, 0, 0, winW, winH, "*65 " continueBtn)
+    continuebtnExist := ImageSearch(&bx, &by, 0, 0, winW, winH, "*85 " continueBtn)
     ;Log("主菜单继续游戏检测结果：" continuebtnExist)
     ;Sleep 2000
     if continuebtnExist {

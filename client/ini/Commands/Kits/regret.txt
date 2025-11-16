@@ -1,6 +1,0 @@
-ChangeCurrencyBalance Normal 300000 %s
-SpawnItem MemoryModule_Level4 5 Location %s
-SpawnItem
-SpawnItem
-SpawnItem
-SpawnItem
