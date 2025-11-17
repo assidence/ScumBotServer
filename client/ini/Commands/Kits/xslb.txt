@@ -1,14 +1,14 @@
 SpawnRandomItem Christmas_Present_AK15::Christmas_Present_AKS_74U::Christmas_Present_AS_Val::Christmas_Present_Kar98::Christmas_Present_M1::Christmas_Present_M16A4::Christmas_Present_M249::Christmas_Present_MAC10::Christmas_Present_MK18::Christmas_Present_MP5::Christmas_Present_RPK::Christmas_Present_SCAR_DMR::Christmas_Present_SVD::Christmas_Present_UMP 1
-SpawnItem Military_Backpack_02_02 1 Location %s
-SpawnItem MRE_Stew 4 Location %s
-SpawnItem Milk 2 Location %s
+SpawnRandomItem Hiking_Backpack_01_01::Hiking_Backpack_01_02::Hiking_Backpack_01_03::Hiking_Backpack_01_04::Hiking_Backpack_01_05::Military_Backpack_02_01::Military_Backpack_02_02::Military_Backpack_02_03::Military_Backpack_02_04::Military_Backpack_02_05::Military_Backpack_02_06::Military_Backpack_02_07::Military_Backpack_02_08 1
+SpawnRandomItem ChocolateCandy_04::ChocolateCandy_05::ChocolateCandy_06::ChocolateCandy_07::ChocolateCandy_08::ChocolateCandy_09::ChocolateCandy_10::ChocolateCandy_11::MRE_Cheeseburger::MRE_Stew::MRE_TunaSalad 6
+SpawnRandomItem Can01::Can02::Can03::Can04::Energy_Drink_Red_Ghoul::GlassBottle01::GlassBottle02::GlassBottle03::GlassBottle04::Milk::PETBottle01::PETBottle02::PETBottle03::PETBottle04 4
 SpawnItem Emergency_Bandage_Big 2 Location %s
-SpawnItem Tactical_Jacket_01_02 1 Location %s
-SpawnItem CombatBoots 1 Location %s
-SpawnItem Military_Quiver_02 1 Location %s
-SpawnItem Jeans_01_03 1 Location %s
-SpawnItem Bulletproof_Vest_01_02 1 Location %s
-SpawnItem Military_Helmet_01_02 1 Location %s
+SpawnRandomItem Camouflage_Jacket_01::Camouflage_Jacket_02::Camouflage_Jacket_03::College_Jacket_01::College_Jacket_02::College_Jacket_03::College_Jacket_04::College_Jacket_05::College_Jacket_06::College_Jacket_07::College_Jacket_08::Jeans_Jersey_Jacket_01::Jeans_Jersey_Jacket_02::Jock_Jacket_01::Jock_Jacket_02::Jock_Jacket_03::Jock_Jacket_04::Leather_Jacket::MA1_Spitfire_01::MA1_Spitfire_02::MA1_Spitfire_03::MA1_Spitfire_04::Motorcycle_Jacket_01::Motorcycle_Jacket_02::Motorcycle_Jacket_03::Negan_Jacket::Tactical_Jacket_01_01::Tactical_Jacket_01_02::Tactical_Jacket_01_03::Tactical_Jacket_01_04::Tactical_Jacket_01_05::Tactical_Jacket_01_06::Tactical_Jacket_01_07::Tactical_Jacket_01_09::Trucker_Jacket_01::Trucker_Jacket_02::Trucker_Jacket_03::Trucker_Jacket_04::Work_Jacket_01::Work_Jacket_02::Work_Jacket_03 1
+SpawnRandomItem Boots_06_01::Boots_06_02::Boots_07_01::Boots_07_02::Boots_07_03::CombatBoots::Hiking_Boots_01::Hiking_Boots_02::Hiking_Boots_03::Hiking_Boots_04::Motorcycle_Boots_01::Motorcycle_Boots_02::Motorcycle_Boots_03::Sneakers_02_01::Sneakers_02_02::Sneakers_02_03::Sneakers_02_04 1
+SpawnRandomItem Military_Quiver_01::Military_Quiver_02::Military_Quiver_03::Military_Quiver_04::Military_Quiver_05::Military_Quiver_06::Military_Quiver_07::Military_Quiver_08 1
+SpawnRandomItem Construction_Pants_01::Construction_Pants_02::Construction_Pants_03::Hippie_Pants_01::Hippie_Pants_02::Hippie_Pants_03::Hippie_Pants_04::Hippie_Pants_05::Hippie_Pants_06::Hippie_Pants_07::Hippie_Pants_08::Hospital_Pants::Jeans_01_01::Jeans_01_02::Jeans_01_03::Jeans_01_04::Jeans_02_01_V2::Jeans_02_02::Jeans_02_03::Jeans_02_04::Jeans_02_05::Jeans_02_06::Jeans_02_07::Jeans_02_08::Jeans_02_09::MilitaryPants_01::MilitaryPants_02::MilitaryPants_03::MilitaryPants_04::MilitaryPants_05::MilitaryPants_06::MilitaryPants_07::MilitaryPants_08::MilitaryPants_09::MilitaryPants_10::Motorcycle_Pants_01::Motorcycle_Pants_02::Motorcycle_Pants_03::Shimoro_Pants::Suite_Pants_01::Tang_pants_05::Working_pants_01_01::Working_pants_01_02::Working_pants_01_03 1
+SpawnRandomItem Armor_Police_Vest_01::Armor_Tactical_Vest_01_01::Armor_Tactical_Vest_01_02::Armor_Tactical_Vest_01_03::Armor_Tactical_Vest_01_04::Armor_Tactical_Vest_01_05::Bulletproof_Vest_01::Bulletproof_Vest_01_02::Bulletproof_Vest_01_03::Bulletproof_Vest_01_04::Bulletproof_Vest_01_05::Police_Bulletproof_Vest_01::Stabproof_Vest_01_09 1
+SpawnRandomItem Combat_Helmet_01::Combat_Helmet_02::Combat_Helmet_03::Combat_Helmet_04::K6-3_Helmet::Military_Helmet_01_01::Military_Helmet_01_02::Military_Helmet_01_03::Military_Helmet_01_04::Military_Helmet_01_05::Military_Helmet_01_06::Military_Helmet_01_07::Military_Helmet_01_08::Military_Helmet_01_09::Riot_Helmet_02 1
 SpawnItem 2H_Tang_Dao 1 Location %s
 SpawnItem Weapon_AT4_HEAT 1 Location %s
 SpawnItem Cash 5 CashValue 10000 Location %s

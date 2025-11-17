@@ -1,0 +1,16 @@
+SpawnRandomItem Christmas_Present_AK15::Christmas_Present_AKS_74U::Christmas_Present_AS_Val::Christmas_Present_Kar98::Christmas_Present_M1::Christmas_Present_M16A4::Christmas_Present_M249::Christmas_Present_MAC10::Christmas_Present_MK18::Christmas_Present_MP5::Christmas_Present_RPK::Christmas_Present_SCAR_DMR::Christmas_Present_SVD::Christmas_Present_UMP 1
+SpawnItem Military_Backpack_02_02 1 Location %s
+SpawnItem MRE_Stew 4 Location %s
+SpawnItem Milk 2 Location %s
+SpawnItem Emergency_Bandage_Big 2 Location %s
+SpawnItem Tactical_Jacket_01_02 1 Location %s
+SpawnItem CombatBoots 1 Location %s
+SpawnItem Military_Quiver_02 1 Location %s
+SpawnItem Jeans_01_03 1 Location %s
+SpawnItem Bulletproof_Vest_01_02 1 Location %s
+SpawnItem Military_Helmet_01_02 1 Location %s
+SpawnItem 2H_Tang_Dao 1 Location %s
+SpawnItem Weapon_AT4_HEAT 1 Location %s
+SpawnItem Cash 5 CashValue 10000 Location %s
+SpawnVehicle BPC_Laika 1 Location "X=%s Y=%s Z=%s"
+温馨提示：如果不小心卡在车里，请长按F 选择向前推动
