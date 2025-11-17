@@ -1,0 +1,1 @@
+SpawnItem Zombie_Impersonator_Suit 1 Location %s
