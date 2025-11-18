@@ -48,7 +48,7 @@ func EconomyHandler(ecoch chan string, execch chan string) {
 			result := parseClassicTrade(timestamp, content)
 			//fmt.Println(result)
 			if result == nil {
-				fmt.Println("[Economy-Error] No Trade event：", content)
+				//fmt.Println("[Economy-Error] No Trade event：", content)
 				continue
 			}
 			//fmt.Println("Amount:", result.Amount)
@@ -59,7 +59,7 @@ func EconomyHandler(ecoch chan string, execch chan string) {
 			result := parseMechanicTrade(timestamp, content)
 			//fmt.Println(result)
 			if result == nil {
-				fmt.Println("[Economy-Error] No Trade-Mechanic event")
+				//fmt.Println("[Economy-Error] No Trade-Mechanic event")
 				continue
 			}
 			execData["command"] = result.Action
@@ -68,7 +68,7 @@ func EconomyHandler(ecoch chan string, execch chan string) {
 			result := parseCurrencyConversion(timestamp, content)
 			//fmt.Println(result)
 			if result == nil {
-				fmt.Println("[Economy-Error] No Currency Conversion event")
+				//fmt.Println("[Economy-Error] No Currency Conversion event")
 				continue
 			}
 			execData["command"] = result.Action
@@ -76,7 +76,7 @@ func EconomyHandler(ecoch chan string, execch chan string) {
 		case "Bank":
 			result := parseBankEvent(timestamp, content)
 			if result == nil {
-				fmt.Println("[Economy-Error] No Bank event")
+				//fmt.Println("[Economy-Error] No Bank event")
 				continue
 			}
 			execData["command"] = result.Action
@@ -101,7 +101,7 @@ func parseClassicTrade(ts time.Time, content string) *TradeEvent {
 	re := regexp.MustCompile(`Tradeable \(([^()]+?)(?: \(x(\d+)\)| \([^)]+\))\) (purchased|sold) by ([^(]+)\((\d+)\) for ([\d\.]+)(?: \([^)]*worth of contained items\))?(?: money)? (?:from|to) trader (\S+)`)
 	m := re.FindStringSubmatch(content)
 	if len(m) != 8 {
-		fmt.Println("[Economy-Error] parseClassicTrade: insufficient match:", content)
+		//fmt.Println("[Economy-Error] parseClassicTrade: insufficient match:", content)
 		return nil
 	}
 
@@ -135,7 +135,7 @@ func parseMechanicTrade(ts time.Time, content string) *TradeEvent {
 	re := regexp.MustCompile(`Service \((.+?)\) (repaired|refueled|painted|sold|purchased) by (.+?)\((\d+)\) for ([\d\.]+) money from trader (\S+)`)
 	m := re.FindStringSubmatch(content)
 	if len(m) != 7 {
-		fmt.Println("[Economy-Error] parseMechanicTrade: insufficient match:", content)
+		//fmt.Println("[Economy-Error] parseMechanicTrade: insufficient match:", content)
 		return nil
 	}
 	price, _ := strconv.ParseFloat(m[5], 64)
@@ -191,7 +191,7 @@ func parseCurrencyConversion(ts time.Time, content string) *TradeEvent {
 	}
 
 	// 都不匹配返回nil
-	fmt.Println("[Economy-Error] parseCurrencyConversion: no match", content)
+	//fmt.Println("[Economy-Error] parseCurrencyConversion: no match", content)
 	return nil
 }
 
@@ -230,6 +230,6 @@ func parseBankEvent(ts time.Time, content string) *TradeEvent {
 		}
 	}
 
-	fmt.Println("[Economy-Error] parseBankEvent: no match for content:", content)
+	//fmt.Println("[Economy-Error] parseBankEvent: no match for content:", content)
 	return nil
 }
