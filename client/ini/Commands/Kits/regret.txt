@@ -1,0 +1,9 @@
+SpawnItem Bundle_Of_Rags 100 Location %s
+SpawnItem Rope1 100 Location %s
+SpawnItem Wooden_Log_01 100 Location %s
+SpawnItem Nails_Package_Box 100 Location %s
+
+SpawnItem 2H_Axe 1 Location %s
+SpawnItem Sledgehammer 1 Location %s
+SpawnItem Chainsaw 1 Location %s
+SpawnRandomItem Christmas_Present_AK15::Christmas_Present_AKS_74U::Christmas_Present_AS_Val::Christmas_Present_Kar98::Christmas_Present_M1::Christmas_Present_M16A4::Christmas_Present_M249::Christmas_Present_MAC10::Christmas_Present_MK18::Christmas_Present_MP5::Christmas_Present_RPK::Christmas_Present_SCAR_DMR::Christmas_Present_SVD::Christmas_Present_UMP 5

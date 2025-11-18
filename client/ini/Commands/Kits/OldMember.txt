@@ -1,0 +1,5 @@
+SpawnItem Gasoline_Canister 1 Location %s
+SpawnItem KeyCard 1 Location %s
+SpawnItem Emergency_Bandage_Big 2 Location %s
+
+SpawnItem Vodka 1 Location %s
