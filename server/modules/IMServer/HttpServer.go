@@ -33,7 +33,7 @@ var (
 
 // StartServer 启动 IM 服务器
 func StartServer(address string, incoming chan Message, online chan struct{}) error {
-	ln, err := net.Listen("tcp", address)
+	ln, err := net.Listen("tcp4", address)
 	if err != nil {
 		return err
 	}

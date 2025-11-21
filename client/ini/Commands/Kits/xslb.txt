@@ -11,7 +11,6 @@ SpawnRandomItem Stabproof_Vest_01_01::Stabproof_Vest_01_02::Stabproof_Vest_01_03
 SpawnRandomItem Combat_Helmet_01::Combat_Helmet_02::Combat_Helmet_03::Combat_Helmet_04::K6-3_Helmet::Military_Helmet_01_01::Military_Helmet_01_02::Military_Helmet_01_03::Military_Helmet_01_04::Military_Helmet_01_05::Military_Helmet_01_06::Military_Helmet_01_07::Military_Helmet_01_08::Military_Helmet_01_09::Riot_Helmet_02 1
 SpawnItem Tactical_Vest_01 1 Location %s
 SpawnItem 2H_Tang_Dao 1 Location %s
-SpawnItem Weapon_AT4_HEAT 1 Location %s
 SpawnItem Cash 5 CashValue 10000 Location %s
 SpawnVehicle BPC_Laika 1 Location "X=%s Y=%s Z=%s"
 温馨提示：如果不小心卡在车里，请长按F 选择向前推动
