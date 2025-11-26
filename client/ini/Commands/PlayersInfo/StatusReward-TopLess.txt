@@ -1,3 +1,2 @@
-RewardEcho 玩家 %s 因积极带动气氛而广受丧尸和幸存者的好评
 SpawnItem Milk 2 Location %s
 SpawnRandomItem ActivatedCharcoal_02::Antibiotics_02::AntiburnGel::Antiparasitics_02::AtropineInjection::Emergency_Bandage_Big::Hemostatic_Dressing::IntEA_Level1::Painkillers_02::PotassiumIodide_PilLs_02::Vitamins_02 3

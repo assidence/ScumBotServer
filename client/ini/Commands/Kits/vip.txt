@@ -1,4 +1,4 @@
-SpawnRandomItem Christmas_Present_AK15::Christmas_Present_AKS_74U::Christmas_Present_AS_Val::Christmas_Present_Kar98::Christmas_Present_M1::Christmas_Present_M16A4::Christmas_Present_M249::Christmas_Present_MAC10::Christmas_Present_MK18::Christmas_Present_MP5::Christmas_Present_RPK::Christmas_Present_SCAR_DMR::Christmas_Present_SVD::Christmas_Present_UMP 1
+SpawnRandomItem Christmas_Present_AK15::Christmas_Present_AKS_74U::Christmas_Present_AS_Val::Christmas_Present_Kar98_02::Christmas_Present_M1::Christmas_Present_M16A4::Christmas_Present_M249::Christmas_Present_MAC10::Christmas_Present_MK18::Christmas_Present_MP5::Christmas_Present_RPK::Christmas_Present_SCAR_DMR::Christmas_Present_SVD::Christmas_Present_UMP 1
 SpawnRandomItem Hiking_Backpack_01_01::Hiking_Backpack_01_02::Hiking_Backpack_01_03::Hiking_Backpack_01_04::Hiking_Backpack_01_05::Military_Backpack_02_01::Military_Backpack_02_02::Military_Backpack_02_03::Military_Backpack_02_04::Military_Backpack_02_05::Military_Backpack_02_06::Military_Backpack_02_07::Military_Backpack_02_08 1
 SpawnItem MRE_Stew 4 Location %s
 SpawnItem Milk 4 Location %s
@@ -11,5 +11,4 @@ SpawnRandomItem Stabproof_Vest_01_01::Stabproof_Vest_01_02::Stabproof_Vest_01_03
 SpawnRandomItem Combat_Helmet_01::Combat_Helmet_02::Combat_Helmet_03::Combat_Helmet_04::K6-3_Helmet::Military_Helmet_01_01::Military_Helmet_01_02::Military_Helmet_01_03::Military_Helmet_01_04::Military_Helmet_01_05::Military_Helmet_01_06::Military_Helmet_01_07::Military_Helmet_01_08::Military_Helmet_01_09::Riot_Helmet_02 1
 SpawnItem Tactical_Vest_01 1 Location %s
 SpawnItem 2H_Tang_Dao 1 Location %s
-SpawnItem Weapon_AT4_HEAT 1 Location %s
 SpawnItem Cash 5 CashValue 10000 Location %s
