@@ -265,7 +265,7 @@ func CommandHandler(cmdChan chan map[string]interface{}, levelCfg *execModules.C
 			// 玩家主动领取奖励
 			targetTier := player.LastTier
 			if targetTier == "" {
-				chatChan <- fmt.Sprintf("玩家 %s 当前没有可领取的奖励", nickName)
+				chatChan <- fmt.Sprintf("玩家 %s 当前没有解锁签到奖励", nickName)
 				continue
 			}
 
@@ -275,7 +275,7 @@ func CommandHandler(cmdChan chan map[string]interface{}, levelCfg *execModules.C
 					lines := Public.CommandSelecterInterface.Selecter(steamID, line)
 					for _, l := range lines {
 						chatChan <- l
-						//fmt.Println("[CheckInRewardManager]:" + l)
+						fmt.Println("[CheckInRewardManager]:" + l)
 					}
 				}
 			}
