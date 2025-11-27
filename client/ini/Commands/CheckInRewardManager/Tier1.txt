@@ -1,1 +1,1 @@
-SpawnRandomItem ActivatedCharcoal_02::ActivatedCharcoal_03::Adrenaline_Shot::Antibiotics_02::Antibiotics_03::AntiburnGel::AntiburnGel_Improvised::Antiparasitics_02::Antiparasitics_03::AtropineInjection::Bundle_Of_Rags::Emergency_Bandage_Big::Hemostatic_Dressing::IntEA_Level1::IntEA_Level2::IntEA_Level3::Painkillers_02::Painkillers_03::Penicillin01::Phoenix_Tears::PotassiumIodide_PilLs_02::PotassiumIodide_Pills_03::Pressure_Dressing::Tourniquet::Vitamins_02::Vitamins_03 5
+SpawnItem Cash 1 CashValue 10000 Location %s
