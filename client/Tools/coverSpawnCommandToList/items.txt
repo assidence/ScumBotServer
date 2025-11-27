@@ -1,8 +1,3 @@
-#spawnitem Stabproof_Vest_01_02 1
-#spawnitem Stabproof_Vest_01_08 1
-#spawnitem Stabproof_Vest_01_01 1
-#spawnitem Stabproof_Vest_01_05 1
-#spawnitem Stabproof_Vest_01_07 1
-#spawnitem Stabproof_Vest_01_04 1
-#spawnitem Stabproof_Vest_01_06 1
-#spawnitem Stabproof_Vest_01_03 1
+#spawnitem KeyCardBunker_Level01 1
+#spawnitem KeyCard 1
+#spawnitem KeyCardBunker_Level02 1

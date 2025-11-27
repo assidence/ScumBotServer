@@ -32,7 +32,7 @@ type PlayerInfo struct {
 func iniLoader() *execModules.Config {
 	debugLog("加载 CheckInRewardManager.ini ...")
 
-	cfg, err := execModules.NewConfig("./ini/CheckInRewardManager.ini")
+	cfg, err := execModules.NewConfig("./ini/CheckInRewardManager/CheckInRewardManager.ini")
 	if err != nil {
 		fmt.Println("[ERROR-CheckInRewardManager]->Error:", err)
 		return &execModules.Config{}
@@ -60,7 +60,7 @@ func iniLoader() *execModules.Config {
 func loadRewardLevels() *execModules.Config {
 	debugLog("加载 CheckInRewardLevels.ini ...")
 
-	cfg, err := execModules.NewConfig("./ini/CheckInRewardLevels.ini")
+	cfg, err := execModules.NewConfig("./ini/CheckInRewardManager/CheckInRewardLevels.ini")
 	if err != nil {
 		fmt.Println("[ERROR-CheckInReward]->Error loading CheckInRewardLevels.ini:", err)
 		return &execModules.Config{Data: make(map[string]map[string]interface{})}
@@ -118,6 +118,7 @@ func getOrCreatePlayer(db *sql.DB, steamID string) (*PlayerInfo, error) {
 
 	if err == sql.ErrNoRows {
 		today := time.Now().Format("2006-01-02")
+		// 首次创建时默认 Tier1
 		_, err := db.Exec(
 			"INSERT INTO players_tier(steam_id, last_login, total_login_days, last_reward_tier) VALUES (?, ?, ?, ?)",
 			steamID, today, 1, "",
@@ -137,36 +138,48 @@ func getOrCreatePlayer(db *sql.DB, steamID string) (*PlayerInfo, error) {
 		return nil, err
 	}
 
-	debugLog(fmt.Sprintf("玩家记录读取成功: %s, 连续 %d 天", steamID, p.TotalLogin))
+	debugLog(fmt.Sprintf("玩家记录读取成功: %s, 连续 %d 天, 当前Tier: %s", steamID, p.TotalLogin, p.LastTier))
 	return &p, nil
 }
 
-func updateDailyLogin(db *sql.DB, p *PlayerInfo) error {
+// 更新玩家签到与当前 Tier
+func updateDailyLogin(db *sql.DB, p *PlayerInfo, levelCfg *execModules.Config) error {
 	today := time.Now().Format("2006-01-02")
-	if p.LastLoginDate != today {
+	firstLoginToday := p.LastLoginDate != today
+
+	if firstLoginToday {
 		p.TotalLogin++
 		p.LastLoginDate = today
 		debugLog(fmt.Sprintf("玩家 %s 今日首次登录，累计: %d", p.SteamID, p.TotalLogin))
+	}
 
-		_, err := db.Exec(
-			"UPDATE players_tier SET total_login_days=?, last_login=? WHERE steam_id=?",
-			p.TotalLogin, today, p.SteamID,
-		)
+	// 计算当前 Tier
+	var currentTier string
+	highestDays := int64(-1)
+	for tier := range levelCfg.Data {
+		requiredDays := levelCfg.GetInt(tier, "Days")
+		if int64(p.TotalLogin) >= requiredDays && requiredDays > highestDays {
+			currentTier = tier
+			highestDays = requiredDays
+		}
+	}
+
+	// 更新数据库
+	_, err := db.Exec(
+		"UPDATE players_tier SET total_login_days=?, last_login=?, last_reward_tier=? WHERE steam_id=?",
+		p.TotalLogin, today, currentTier, p.SteamID,
+	)
+	if err != nil {
 		return err
 	}
 
-	debugLog("玩家今日已登录: " + p.SteamID)
+	p.LastTier = currentTier
+
+	if firstLoginToday {
+		debugLog(fmt.Sprintf("玩家 %s 当前 Tier 更新为 %s", p.SteamID, currentTier))
+	}
+
 	return nil
-}
-
-func updatePlayerTier(db *sql.DB, steamID string, tier string) error {
-	debugLog(fmt.Sprintf("更新玩家 %s Tier 为 %s", steamID, tier))
-
-	_, err := db.Exec(
-		"UPDATE players_tier SET last_reward_tier=? WHERE steam_id=?",
-		tier, steamID,
-	)
-	return err
 }
 
 // PMbucket & 命令注册
@@ -191,38 +204,15 @@ func CommandRegister(cfg *execModules.Config, regCommand *map[string][]string) {
 	(*regCommand)["CheckInRewardManager"] = commandList
 }
 
-// CommandHandler
+// 处理命令
 func CommandHandler(cmdChan chan map[string]interface{}, levelCfg *execModules.Config, PMbucket *Public.Manager, db *sql.DB, chatChan chan string) {
 
 	for Command := range cmdChan {
 		steamID := Command["steamID"].(string)
-		nickName := Command["nickName"].(string)
+		nickName := Public.LogWatcherInterface.Players[steamID].Name
 		command := Command["command"].(string)
 
 		debugLog(fmt.Sprintf("接收到玩家命令 [%s] from %s", command, steamID))
-
-		// 如果玩家调用 @签到，直接返回累计签到天数
-		if command == "@签到" {
-			player, err := getOrCreatePlayer(db, steamID)
-			if err != nil {
-				fmt.Println("[ERROR-CheckInReward]->DB Error:", err)
-				continue
-			}
-			chatChan <- fmt.Sprintf("玩家: %s 已签到了 %d 天", nickName, player.TotalLogin)
-			debugLog(fmt.Sprintf("玩家 %s 查询签到天数: %d", steamID, player.TotalLogin))
-			continue
-		}
-
-		// 权限验证
-		ok, msg := PMbucket.CanExecute(steamID, command)
-		if !ok {
-			if command == "checkIn" {
-				debugLog("[CheckInReward]玩家重复尝试签到: " + steamID)
-			} else {
-				chatChan <- fmt.Sprintf("玩家%s：%s", nickName, msg)
-			}
-			continue
-		}
 
 		// 获取或创建玩家信息
 		player, err := getOrCreatePlayer(db, steamID)
@@ -231,56 +221,77 @@ func CommandHandler(cmdChan chan map[string]interface{}, levelCfg *execModules.C
 			continue
 		}
 
-		// 检查是否首次登录
-		if err := updateDailyLogin(db, player); err != nil {
-			fmt.Println("[ERROR-CheckInReward]->DB Update DailyLogin Error:", err)
-		}
-
-		// 查找符合的最高 Tier
-		var targetTier string
-		highestDays := int64(-1)
-		for tier := range levelCfg.Data {
-			requiredDays := levelCfg.GetInt(tier, "Days")
-			if int64(player.TotalLogin) >= requiredDays && player.LastTier != tier && requiredDays > highestDays {
-				targetTier = tier
-				highestDays = requiredDays
-			}
-		}
-
-		if targetTier == "" {
-			debugLog("玩家没有达到新的奖励 Tier")
-			continue
-		}
-
-		debugLog(fmt.Sprintf("玩家 %s 达成 Tier: %s", steamID, targetTier))
-
-		// 执行奖励命令
-		cmdList, ok := levelCfg.GetValue(targetTier, "Command").([]string)
+		// 权限验证
+		ok, msg := PMbucket.CanExecute(steamID, command)
 		if !ok {
-			fmt.Println("[ERROR-CheckInReward]->Command invalid type:", targetTier)
+			debugLog("[CheckInReward]玩家 " + steamID + " 执行命令：" + command + " 失败")
+			if command == "checkIn" {
+				debugLog("[CheckInReward]玩家重复尝试签到: " + steamID)
+			} else {
+				chatChan <- fmt.Sprintf("玩家%s：%s", nickName, msg)
+			}
 			continue
 		}
 
-		for _, line := range cmdList {
-			lines := Public.CommandSelecterInterface.Selecter(steamID, line)
-			for _, l := range lines {
-				chatChan <- l
-				fmt.Println("[CheckInRewardManager]:" + l)
+		switch command {
+
+		case "checkIn":
+			// 自动签到：更新每日登录 + 刷新已解锁 Tier
+			if err := updateDailyLogin(db, player, levelCfg); err != nil {
+				fmt.Println("[ERROR-CheckInReward]->DB UpdateDailyLogin Error:", err)
+				continue
 			}
-		}
+			PMbucket.Consume(steamID, command)
+			debugLog(fmt.Sprintf("玩家 %s 自动签到完成，累计 %d 天，当前解锁 Tier: %s", steamID, player.TotalLogin, player.LastTier))
 
-		// 扣除权限
-		PMbucket.Consume(steamID, command)
+		case "@签到":
+			// 玩家主动查询签到信息
+			tierDisc := ""
+			if player.LastTier != "" {
+				if v, ok := levelCfg.GetValue(player.LastTier, "Disc").(string); ok {
+					tierDisc = v
+				}
+			}
 
-		// 更新玩家 Tier
-		if err := updatePlayerTier(db, steamID, targetTier); err != nil {
-			fmt.Println("[ERROR-CheckInReward]->DB Update Tier Error:", err)
+			if tierDisc != "" {
+				chatChan <- fmt.Sprintf("玩家: %s 已签到 %d 天\n%s", nickName, player.TotalLogin, tierDisc)
+			} else {
+				chatChan <- fmt.Sprintf("玩家: %s 已签到 %d 天", nickName, player.TotalLogin)
+			}
+			PMbucket.Consume(steamID, command)
+			debugLog(fmt.Sprintf("玩家 %s 查询签到天数: %d, 描述: %s", steamID, player.TotalLogin, tierDisc))
+
+		case "@老手礼包":
+			// 玩家主动领取奖励
+			targetTier := player.LastTier
+			if targetTier == "" {
+				chatChan <- fmt.Sprintf("玩家 %s 当前没有可领取的奖励", nickName)
+				continue
+			}
+
+			cmdList, ok := levelCfg.GetValue(targetTier, "Command").([]string)
+			if ok {
+				for _, line := range cmdList {
+					lines := Public.CommandSelecterInterface.Selecter(steamID, line)
+					for _, l := range lines {
+						chatChan <- l
+						//fmt.Println("[CheckInRewardManager]:" + l)
+					}
+				}
+			}
+
+			PMbucket.Consume(steamID, command)
+			debugLog(fmt.Sprintf("玩家 %s 使用老手礼包，执行 Tier %s 奖励命令", steamID, targetTier))
+
+		default:
+			// 其他未知命令
+			debugLog(fmt.Sprintf("[ERROR-CheckInReward] 未知命令: %s", command))
 		}
 	}
 }
 
 // 模块启动
-func CheckInRewardManager(regCommand *map[string][]string, cmdChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
+func CheckInRewardManager(regCommand *map[string][]string, CheckInRewardManagerChan chan map[string]interface{}, chatChan chan string, initChan chan struct{}) {
 
 	debugLog("初始化 CheckInRewardManager 模块")
 
@@ -292,9 +303,9 @@ func CheckInRewardManager(regCommand *map[string][]string, cmdChan chan map[stri
 	levelCfg := loadRewardLevels()
 
 	db := createDB()
-	defer db.Close()
+	//defer db.Close()
 
-	go CommandHandler(cmdChan, levelCfg, PmBucket, db, chatChan)
+	go CommandHandler(CheckInRewardManagerChan, levelCfg, PmBucket, db, chatChan)
 
 	debugLog("CheckInRewardManager 初始化完毕")
 

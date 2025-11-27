@@ -4,6 +4,7 @@ import (
 	"ScumBotServer/client/execModules"
 	"ScumBotServer/client/execModules/Achievement"
 	"ScumBotServer/client/execModules/Announcer"
+	"ScumBotServer/client/execModules/CheckInRewardManager"
 	"ScumBotServer/client/execModules/CommandSelecter"
 	"ScumBotServer/client/execModules/DidiCar"
 	"ScumBotServer/client/execModules/Kits"
@@ -28,6 +29,8 @@ var AnnouncerChan = make(chan map[string]interface{}, 100)
 var AchievementChan = make(chan map[string]interface{}, 100)
 
 var PlayersInfoChan = make(chan map[string]interface{}, 100)
+
+var CheckInRewardManagerChan = make(chan map[string]interface{}, 100)
 
 var chatChan = make(chan string, 1024)
 
@@ -80,6 +83,11 @@ func moduleInit(regCommand *map[string][]string, sendChannel chan []byte) {
 	fmt.Println("[Module] 广播模组已加载")
 
 	initChan = make(chan struct{})
+	go CheckInRewardManager.CheckInRewardManager(regCommand, CheckInRewardManagerChan, chatChan, initChan)
+	<-initChan
+	fmt.Println("[Module] 签到管理器已加载")
+
+	initChan = make(chan struct{})
 	go PlayersInfo.PlayersInfo(regCommand, PlayersInfoChan, AchievementChan, chatChan, initChan)
 	<-initChan
 	fmt.Println("[Module] 玩家状态解释及奖励器已加载")
@@ -129,6 +137,9 @@ func commandSelecter(command map[string]interface{}, regCommand *map[string][]st
 				return
 			case "PlayersInfo":
 				PlayersInfoChan <- command
+				return
+			case "CheckInRewardManager":
+				CheckInRewardManagerChan <- command
 				return
 			}
 		}

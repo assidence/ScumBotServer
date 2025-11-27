@@ -17,9 +17,27 @@ func JoinLeaveHandler(regstring string, commch <-chan string, execch chan string
 	for line := range commch {
 		matches := re.FindStringSubmatch(line)
 		if len(matches) > 2 {
+			/*
+				for _, i := range matches {
+					fmt.Println("JoinEventMatches:", i)
+				}
+
+			*/
 			execData["command"] = "@" + matches[6]
 			//execData["command"] = matches[3]
 			execData["commandArgs"] = matches[4]
+
+			if matches[6] == "in" {
+				execData2 := map[string]string{
+					"steamID":     matches[3],
+					"nickName":    matches[4],
+					"command":     "checkIn",
+					"commandArgs": "0",
+				}
+				jsonByte = sequenceJson(&execData2)
+				execch <- string(jsonByte)
+			}
+
 			jsonByte = sequenceJson(&execData)
 			execch <- string(jsonByte)
 		} else {

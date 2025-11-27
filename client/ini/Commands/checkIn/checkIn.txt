@@ -1,1 +1,0 @@
-SpawnItem Christmas_Present_mp5 1 %s
