@@ -254,9 +254,9 @@ func CommandHandler(cmdChan chan map[string]interface{}, levelCfg *execModules.C
 			}
 
 			if tierDisc != "" {
-				chatChan <- fmt.Sprintf("玩家: %s 已签到 %d 天\n%s", nickName, player.TotalLogin, tierDisc)
+				chatChan <- fmt.Sprintf("玩家: %s 已签到 %d 天，\n%s", nickName, player.TotalLogin, tierDisc)
 			} else {
-				chatChan <- fmt.Sprintf("玩家: %s 已签到 %d 天", nickName, player.TotalLogin)
+				chatChan <- fmt.Sprintf("玩家: %s 已签到 %d 天，暂未解锁签到礼包", nickName, player.TotalLogin)
 			}
 			PMbucket.Consume(steamID, command)
 			debugLog(fmt.Sprintf("玩家 %s 查询签到天数: %d, 描述: %s", steamID, player.TotalLogin, tierDisc))
