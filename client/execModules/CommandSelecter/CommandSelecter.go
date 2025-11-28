@@ -63,6 +63,7 @@ func Selecter(steamID string, cfgCommand string) []string {
 				}
 			}
 		}
+		cfgChat = append(cfgChat, "已发送称号礼包")
 	case "ShutdownServer":
 		cfgChat = append(cfgChat, commandPrefix+"ShutdownServer pretty please")
 	case "AddOnlineCurrency":
