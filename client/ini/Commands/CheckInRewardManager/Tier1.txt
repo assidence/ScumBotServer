@@ -1,1 +1,2 @@
+RewardEcho 正在发送 %s 的老手礼包
 SpawnItem Cash 1 CashValue 10000 Location %s

@@ -1,2 +1,3 @@
+RewardEcho 正在发送 %s 的老手礼包
 SpawnRandomItem ActivatedCharcoal_02::ActivatedCharcoal_03::Adrenaline_Shot::Antibiotics_02::Antibiotics_03::AntiburnGel::AntiburnGel_Improvised::Antiparasitics_02::Antiparasitics_03::AtropineInjection::Bundle_Of_Rags::Emergency_Bandage_Big::Hemostatic_Dressing::IntEA_Level1::IntEA_Level2::IntEA_Level3::Painkillers_02::Painkillers_03::Penicillin01::Phoenix_Tears::PotassiumIodide_PilLs_02::PotassiumIodide_Pills_03::Pressure_Dressing::Tourniquet::Vitamins_02::Vitamins_03 3
 SpawnRandomItem Aeroplane_Repair_Kit::Car_Repair_Kit::Electrical_Repair_Kit::Grinding_Stone_02::Improvised_Tool_Box::Sewing_kit::Tire_Repair_Kit::Tool_Box::Tool_Box_Small::Weapon_Cleaning_Kit 2
